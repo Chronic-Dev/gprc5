@@ -51,7 +51,26 @@ extern int gCmdCount;
 extern Bool gCmdHasInit;
 extern CmdInfo** gCmdCommands;
 
-extern int(*jump_to)(int flags, void* addr, int phymem);
+struct boot_args {
+    unsigned short something; // 0 - 1
+    unsigned short epoch; // 2 - must be 2 (6 on iPhone1,2 etc...?)
+    unsigned int virtbase; // 4
+    unsigned int physbase; // 8
+    unsigned int size; // c
+    unsigned int pt_paddr; // 10: | 0x18 (eh, but we're 0x4000 off) -> ttbr1
+    unsigned int v_baseAddr; // 14 (-> PE_state+4 - v_baseAddr) 5f700000
+    unsigned int v_display; // 18 (-> PE_state+0x18 - v_display) 1
+    unsigned int v_rowBytes;  // 1c (-> PE_state+8 - v_rowBytes) 2560
+    unsigned int v_width; // 20 (-> PE_state+0xc - v_width) 640
+    unsigned int v_height; // 24 (-> PE_state+0x10 - v_height) 960
+    unsigned int v_depth; // 28 (-> PE_state+0x14 - v_depth) 65568?
+    unsigned int unk2c; // 2c
+    char     *dt_vaddr; // 30 (-> PE_state+0x6c)
+    unsigned int dt_size; // 34
+    char     cmdline[255]; // 38
+};
+
+extern int(*jump_to)(int flags, void* addr, struct boot_args* bootargs);
 extern int(*load_ramdisk)(int argc);
 
 int cmd_init();

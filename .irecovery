@@ -64,3 +64,9 @@ bootx
 setenv\040auto-boot\040true
 saveenv
 reboot
+bootx
+/exit
+go\040help
+go\040help
+go\040bdev\040list
+/exit

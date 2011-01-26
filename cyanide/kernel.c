@@ -33,7 +33,8 @@
 
 #include "macho.h"
 
-static char* gKernelAddr = NULL;
+char gKernelArgs[255];
+char* gKernelAddr = NULL;
 char* gBootArgs = NULL;
 char** gKernelPhyMem = SELF_KERNEL_PHYMEM;
 
@@ -41,6 +42,7 @@ int(*kernel_atv_load)(char* boot_path, char** output) = NULL;
 int(*kernel_load)(void* input, int max_size, char** output) = NULL;
 
 void* find_kernel_bootargs() {
+	memset(gKernelArgs, '\0', 255);
 	return find_string(TARGET_BASEADDR, TARGET_BASEADDR, 0x40000, "rd=md0");
 }
 
@@ -122,17 +124,22 @@ int kernel_bootargs(int argc, CmdArg* argv) {
 	}
 
 	int i = 0;
-	int size = strlen(gBootArgs);
+	int size = 254;
+	//int size = strlen(gBootArgs);
 	for(i = 2; i < argc; i++) {
 		if(i == 2) {
-			strncpy(gBootArgs, "", size);
+			strncpy(gKernelArgs, "", size);
+			//strncpy(gBootArgs, "", size);
 		}
 		if(i > 2) {
-			strncat(gBootArgs, " ", size);
+			strncat(gKernelArgs, " ", size);
+			//strncat(gBootArgs, " ", size);
 		}
-		strncat(gBootArgs, argv[i].string, size);
+		strncat(gKernelArgs, argv[i].string, size);
+		//strncat(gBootArgs, argv[i].string, size);
 	}
 
+	printf("gKernelArgs set to %s\n", gKernelArgs);
 	return 0;
 }
 

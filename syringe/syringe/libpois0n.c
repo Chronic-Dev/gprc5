@@ -481,7 +481,7 @@ int boot_ramdisk() {
 
 int boot_tethered() {
 	irecv_error_t error = IRECV_E_SUCCESS;
-
+/*
 	debug("Preparing to upload ramdisk\n");
 	if (upload_ramdisk() < 0) {
 		error("Unable to upload ramdisk\n");
@@ -494,7 +494,7 @@ int boot_tethered() {
 		error("Unable to execute ramdisk command\n");
 		return -1;
 	}
-	
+*/
 	debug("Setting kernel bootargs\n");
 	error = irecv_send_command(client, "go kernel bootargs -v serial=1 debug=0xa");
 	if (error != IRECV_E_SUCCESS) {
@@ -509,7 +509,7 @@ int boot_tethered() {
 	}
 
 	debug("Hooking jump_to command\n");
-	//error = irecv_send_command(client, "go rdboot");
+	error = irecv_send_command(client, "go rdboot");
 	if(error != IRECV_E_SUCCESS) {
 		error("Unable to hook jump_to\n");
 		return -1;

@@ -33,6 +33,7 @@
 #	define SELF_KERNEL_PHYMEM 0
 #endif
 
+extern char gKernelArgs[255];
 extern char* gBootArgs;
 extern char** gKernelPhyMem;
 extern int(*kernel_atv_load)(char* boot_path, char** output);

@@ -26,6 +26,7 @@
 #include "patch.h"
 #include "common.h"
 #include "commands.h"
+#include "kernel.h"
 #include "functions.h"
 #include "coprocessor.h"
 
@@ -34,13 +35,14 @@ Bool gCmdHasInit = FALSE;
 
 CmdInfo** gCmdCommands = NULL;
 
+
 unsigned char* gCmdListEnd = NULL;
 unsigned char* gCmdListBegin = NULL;
 int(*fsboot)(void) = NULL;
-int(*jump_to)(int flags, void* addr, int phymem) = NULL;
+int(*jump_to)(int flags, void* addr, struct boot_args* bootargs) = NULL;
 int(*load_ramdisk)(int argc) = NULL;
 
-void hooked(int flags, void* addr, int phymem);
+void hooked(int flags, void* addr, struct boot_args* bootargs);
 
 /*
  * Private Functions
@@ -372,7 +374,7 @@ int cmd_fsboot(int argc, CmdArg* argv) {
 int cmd_rdboot(int argc, CmdArg* argv) {
 	int i = 0;
 	void* address = NULL;
-	void(*hooker)(int flags, void* addr, void* phymem) = &hooked;
+	void(*hooker)(int flags, void* addr, struct boot_args* bootargs) = &hooked;
 	if(argc != 1) {
 		puts("usage: rdboot\n");
 		return 0;
@@ -421,21 +423,27 @@ void clear_icache() {
     __asm__("nop");
 };
 
-void hooked(int flags, void* addr, int phymem) {
+void hooked(int flags, void* addr, struct boot_args* bootargs) {
 	// patch kernel
-	printf("Entered hooked jump_to function!!!\n");
-	printf("Patching kernel\n");
+	printf("jump_to(%d, %p, 0x%08x)\n", flags, addr, bootargs);
+	//printf("Patching kernel\n");
 	patch_kernel((void*)(LOADADDR - 0x1000000), 0xA00000);
-
+	hexdump((void*)bootargs, 0x200);
 	printf("Replace hooking code with original\n");
-	if(strstr((char*) (IBOOT_BASEADDR + 0x200), "n72ap")) {
+	if(strstr((char*) (TARGET_BASEADDR + 0x200), "n72ap")) {
 		memcpy(jump_to, "\xf0\xb5\x03\xaf\x04\x1c\x15\x1c", 8);
 	} else {
 		memcpy(jump_to, "\x80\xb5\x00\xaf\x04\x46\x15\x46", 8);
 	}
+	//if(strlen(gKernelArgs) > 0) {
+		strcpy(bootargs->cmdline, gKernelArgs);
+		printf("bootargs: %s\n", bootargs->cmdline);
+	//}
 	clear_icache();
+
+
 
 	jump_to++;
 	printf("Calling %p\n", jump_to);
-	jump_to(flags, addr, phymem);
+	jump_to(flags, addr, bootargs);
 }

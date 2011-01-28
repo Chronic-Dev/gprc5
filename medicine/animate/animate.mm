@@ -22,14 +22,54 @@
 #include <sys/sysctl.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <IOKit/IOKitLib.h>
 #include <mach/mach_traps.h>
 
+typedef struct _anim_sequence {
+	const char *filename;
+	float delay;
+} anim_sequence;
+
+#define DEFAULT_DELAY 0
+
+static anim_sequence seq[] = {
+	{ "/bootanim/0.png", DEFAULT_DELAY },
+	{ "/bootanim/1.png", DEFAULT_DELAY },
+	{ "/bootanim/2.png", DEFAULT_DELAY },
+	{ "/bootanim/3.png", DEFAULT_DELAY },
+	{ "/bootanim/4.png", DEFAULT_DELAY },
+	{ "/bootanim/5.png", DEFAULT_DELAY },
+	{ "/bootanim/6.png", DEFAULT_DELAY },
+	{ "/bootanim/7.png", DEFAULT_DELAY },
+	{ "/bootanim/8.png", DEFAULT_DELAY },
+	{ "/bootanim/9.png", DEFAULT_DELAY },
+	{ "/bootanim/10.png", DEFAULT_DELAY },
+	{ "/bootanim/11.png", 8 },
+	{ "/bootanim/12.png", DEFAULT_DELAY },
+	{ "/bootanim/13.png", DEFAULT_DELAY },
+	{ "/bootanim/14.png", DEFAULT_DELAY },
+	{ "/bootanim/15.png", DEFAULT_DELAY },
+	{ "/bootanim/11.png", 8 },
+	{ "/bootanim/16.png", DEFAULT_DELAY },
+	{ "/bootanim/17.png", DEFAULT_DELAY },
+	{ "/bootanim/18.png", DEFAULT_DELAY },
+	{ "/bootanim/19.png", DEFAULT_DELAY },
+	{ "/bootanim/20.png", DEFAULT_DELAY },
+	{ "/bootanim/21.png", DEFAULT_DELAY },
+	{ "/bootanim/11.png", 8 },
+	{ NULL, 0 }
+};
+
+
+
+int screenWidth, screenHeight;
+
 CGContextRef fb_open() {
 	io_connect_t conn = NULL;
-	int screenWidth, screenHeight, bytesPerRow;
+	int bytesPerRow;
 	void *surfaceBuffer;
 	void *frameBuffer;
 	CGContextRef context = NULL;
@@ -56,8 +96,6 @@ CGContextRef fb_open() {
 	*(void **)(&cs_bytes) = dlsym(cs_lib, "CoreSurfaceBufferGetBytesPerRow");
 	*(void **)(&cs_addr) = dlsym(cs_lib, "CoreSurfaceBufferGetBaseAddress");
 
-
-	NSLog(@"symbols: %p - %p - %p - %p - %p - %p - %p - %p", *mfb_open, *mfb_layr, *cs_lock, *cs_unlock, *cs_height, *cs_width, *cs_bytes, *cs_addr);
 
 	io_service_t fb_service = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("AppleCLCD"));
 	if(!fb_service) {
@@ -92,11 +130,30 @@ CGContextRef fb_open() {
 int main(int argc, char **argv, char **envp) {
 	NSAutoreleasePool *p = [[NSAutoreleasePool alloc] init];
 
+	NSMutableArray *arr = [[NSMutableArray alloc] init];
+
+	NSLog(@"Preloading images...");
+	anim_sequence *sp = seq;
+	while(sp->filename != NULL) {
+		CGDataProviderRef dpr = CGDataProviderCreateWithFilename(sp->filename);
+		CGImageRef img = CGImageCreateWithPNGDataProvider(dpr, NULL, true, kCGRenderingIntentDefault);
+
+		[arr addObject:(id)img];
+		CGDataProviderRelease(dpr);
+		sp++;
+	}
+
+	NSLog(@"Sleeping...");
+	sleep(1);
+
 	CGContextRef c = fb_open();
+	int i;
+	for(i = 0; i < [arr count]; i++) {
+		CGImageRef bootimg = (CGImageRef)[arr objectAtIndex:i];
+		CGContextDrawImage(c, CGRectMake(0, 0, screenWidth, screenHeight), bootimg);
+	}
 
-	CGContextSetRGBFillColor(c, 255, 0, 0, 1);
-	CGContextFillRect(c, CGRectMake(10, 10, 40, 40));
-
+	[arr release];
 	[p drain];
 }
 

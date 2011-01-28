@@ -40,7 +40,6 @@
 #include <modules/loader.h>
 #include <modules/pf2.h>
 #include <modules/sachet.h>
-#include <modules/immutable.h>
 
 #define INSTALL_AFC2
 #define INSTALL_FSTAB
@@ -60,6 +59,7 @@ const char* fsck_hfs_atv[] = { "/sbin/fsck_hfs", "-fy", "/dev/rdisk0s1s1", NULL 
 const char* fsck_hfs_user[] = { "/sbin/fsck_hfs", "-fy", "/dev/rdisk0s2s1", NULL };
 const char* fsck_hfs_user_old[] = { "/sbin/fsck_hfs", "-fy", "/dev/rdisk0s2", NULL };
 const char* fsck_hfs_user_atv[] = { "/sbin/fsck_hfs", "-fy", "/dev/rdisk0s1s2", NULL };
+const char* animate_cmd[] = {"/animate", NULL };
 
 static char** envp = NULL;
 
@@ -73,20 +73,38 @@ void parse_module_response(int err) {
 
 int install_files(int device) {
 	int ret = 0;
-	device_info_t dev;
-
 	mkdir("/mnt/private", 0755);
 
-	puts("Checking device information... ");
-	parse_module_response(immutable_install());
+	mkdir("/mnt/bootanim", 0755);
+	ret = install("/files/bootanim/0.png", "/mnt/bootanim/0.png", 0, 80, 0755);
+	ret = install("/files/bootanim/1.png", "/mnt/bootanim/1.png", 0, 80, 0755);
+	ret = install("/files/bootanim/2.png", "/mnt/bootanim/2.png", 0, 80, 0755);
+	ret = install("/files/bootanim/3.png", "/mnt/bootanim/3.png", 0, 80, 0755);
+	ret = install("/files/bootanim/4.png", "/mnt/bootanim/4.png", 0, 80, 0755);
+	ret = install("/files/bootanim/5.png", "/mnt/bootanim/5.png", 0, 80, 0755);
+	ret = install("/files/bootanim/6.png", "/mnt/bootanim/6.png", 0, 80, 0755);
+	ret = install("/files/bootanim/7.png", "/mnt/bootanim/7.png", 0, 80, 0755);
+	ret = install("/files/bootanim/8.png", "/mnt/bootanim/8.png", 0, 80, 0755);
+	ret = install("/files/bootanim/9.png", "/mnt/bootanim/9.png", 0, 80, 0755);
+	ret = install("/files/bootanim/10.png", "/mnt/bootanim/10.png", 0, 80, 0755);
+	ret = install("/files/bootanim/11.png", "/mnt/bootanim/11.png", 0, 80, 0755);
+	ret = install("/files/bootanim/12.png", "/mnt/bootanim/12.png", 0, 80, 0755);
+	ret = install("/files/bootanim/13.png", "/mnt/bootanim/13.png", 0, 80, 0755);
+	ret = install("/files/bootanim/14.png", "/mnt/bootanim/14.png", 0, 80, 0755);
+	ret = install("/files/bootanim/15.png", "/mnt/bootanim/15.png", 0, 80, 0755);
+	ret = install("/files/bootanim/16.png", "/mnt/bootanim/16.png", 0, 80, 0755);
+	ret = install("/files/bootanim/17.png", "/mnt/bootanim/17.png", 0, 80, 0755);
+	ret = install("/files/bootanim/18.png", "/mnt/bootanim/18.png", 0, 80, 0755);
+	ret = install("/files/bootanim/19.png", "/mnt/bootanim/19.png", 0, 80, 0755);
+	ret = install("/files/bootanim/20.png", "/mnt/bootanim/20.png", 0, 80, 0755);
+	ret = install("/files/bootanim/21.png", "/mnt/bootanim/21.png", 0, 80, 0755);
 
-	ret = device_info(&dev);
-	if(ret < 0) return -1;
+	puts("loading boot animation...\n");
 
-	puts("Model = ");puts(dev.model);puts("\n");
-	puts("Version = ");puts(dev.version);puts("\n");
-	puts("Subtype = ");dev.cpusubtype == GP_DEVICE_ARMV6 ? puts("ARMv6\n") : puts("ARMv7\n");
+	ret = install("/files/animate", "/mnt/animate", 0, 80, 0755);
+	fsexec(animate_cmd, cache_env, true);
 
+/*
 	puts("Installing fstab... ");
 	parse_module_response(fstab_install());
 
@@ -101,22 +119,23 @@ int install_files(int device) {
 	if(device != DEVICE_ATV) {
 	    puts("Installing Loader... ");
 	    parse_module_response(loader_install());
-
+*/
 	    /**
 	      *	  TODO: this should be iPad-only.
 	      **/
-	    puts("Removing icon lock... ");
+/*	    puts("Removing icon lock... ");
 	    parse_module_response(capable_install());
 
 	    puts("Refreshing icon cache... ");
 	    parse_module_response(sachet_install());
 	}
-
+*/
 	/**
 	  *   TODO: Load untether exploits
 	  **/
 
 
+	while(1);
 	return 0;
 }
 
@@ -136,6 +155,13 @@ int main(int argc, char* argv[], char* env[]) {
 	}
 	puts("\n\n\n\n\n");
 	puts("Pois0nDisk - by Chronic-Dev Team\n");
+
+	gp_device dev;
+	puts("Checking device information\n");
+	gp_get_device_info(&dev);
+
+	puts("Model = ");puts(dev.model);puts("\n");
+	puts("Version = ");puts(dev.version);puts("\n");
 
 	puts("Mounting filesystem...\n");
 	if (hfs_mount("/dev/disk0s1", "/mnt", MNT_ROOTFS | MNT_RDONLY) != 0) {

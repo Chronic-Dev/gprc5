@@ -22,6 +22,8 @@ SYNC = sync
 HDIUTIL = hdiutil
 XPWNTOOL = xpwntool
 
+#RAMDISK = ramdisk-iOS4.dmg
+RAMDISK = template.dmg
 LAUNCHD_TARGET = src/launchd
 RAMDISK_TARGET = ramdisk.dmg
 ENCRYPT_TARGET = ramdisk.img3
@@ -53,7 +55,7 @@ src/launchd:
 	$(MAKE) -C src launchd
 
 ramdisk.dmg: src/launchd
-	$(CP) template.dmg ramdisk.dmg
+	$(CP) $(RAMDISK) ramdisk.dmg
 	hfsplus ramdisk.dmg add src/launchd /sbin/launchd
 	hfsplus ramdisk.dmg chmod 755 /sbin/launchd
 	hfsplus ramdisk.dmg addall files/ /files

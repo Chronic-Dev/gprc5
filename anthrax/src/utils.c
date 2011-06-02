@@ -221,8 +221,7 @@ void* memset(char *b, int c, int len) {
 int file_exists(const char* path) {
 	struct stat st;
 	int ret = stat(path, &st);
-	if (ret != 0)
-		return -1;
+	if (ret != 0) return -1;
 	return 0;
 }
 

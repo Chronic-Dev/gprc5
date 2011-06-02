@@ -613,27 +613,32 @@ int boot_ramdisk() {
 }
 
 int boot_tethered() {
-	
-		//	fetchVersionURL();
 	irecv_error_t error = IRECV_E_SUCCESS;
-
-	debug("TETHERED: Preparing to upload ramdisk\n");
+	debug("Preparing to upload ramdisk\n");
 	if (upload_ramdisk() < 0) {
 		error("Unable to upload ramdisk\n");
 		return -1;
 	}
-	
+
+	debug("Resizing ramdisk\n");
+	error = irecv_send_command(client, "setenv filesize 0x1000000");
+	if (error != IRECV_E_SUCCESS) {
+		pois0n_set_error("Unable to execute ramdisk command\n");
+		return -1;
+	}
+
 	debug("Executing ramdisk\n");
 	error = irecv_send_command(client, "ramdisk");
 	if (error != IRECV_E_SUCCESS) {
 		pois0n_set_error("Unable to execute ramdisk command\n");
 		return -1;
 	}
-	
+
 	debug("Setting kernel bootargs\n");
 	#ifdef DEBUG_SERIAL
 	error = irecv_send_command(client, "go kernel bootargs -v serial=1 debug=0xa amfi_allow_any_signature=1");
 	#endif
+
 	#ifndef DEBUG_SERIAL
 	error = irecv_send_command(client, "go kernel bootargs -v amfi_allow_any_signature=1");
 	#endif
@@ -665,10 +670,17 @@ int boot_tethered() {
 		return -1;
 	}
 
+    debug("Appending kernelcache to ramdisk\n");
+    error = irecv_send_command(client, "go memory copy 0x41000000 0x44800000 0x1000000");
+    if(error != IRECV_E_SUCCESS) {
+        pois0n_set_error("Unable to append kernelcache\n");
+        return -1;
+    }
+
 	debug("Hooking jump_to command\n");
 	error = irecv_send_command(client, "go rdboot");
 	if(error != IRECV_E_SUCCESS) {
-		error("Unable to hook jump_to\n");
+		pois0n_set_error("Unable to hook jump_to\n");
 		return -1;
 	}
 
@@ -677,7 +689,6 @@ int boot_tethered() {
 		pois0n_set_error("Unable to boot kernelcache\n");
 		return -1;
 	}
-
 	return 0;
 }
 
@@ -973,15 +984,47 @@ plist_t loadFirmwareList() {
 
 int pois0n_is_compatible() {
 	irecv_error_t error = IRECV_E_SUCCESS;
-	info("Checking if device is compatible with this jailbreak\n");
+	info("Checking if device is compatible with this tool\n");
 
 	debug("Checking the device type\n");
 	error = irecv_get_device(client, &device);
 	if (device == NULL || device->index == DEVICE_UNKNOWN) {
-		pois0n_set_error("Sorry device is not compatible with this jailbreak\n");
+		pois0n_set_error("Sorry device is not compatible with this tool\n");
 		return -1;
 	}
 	info("Identified device as %s\n", device->product);
+
+        {
+            char model[16], fw[16], prefix[48], theurl[1024];
+            FILE *f;
+
+            printf("\nEnter device model number: ");
+            fgets(model, sizeof(model), stdin);
+            strchr(model, '\n')[0] = 0;
+            printf("Enter firmware version: ");
+            fgets(fw, sizeof(fw), stdin);
+            strchr(fw, '\n')[0] = 0;
+            debug("looking up %s+%s...\n", model, fw);
+            snprintf(prefix, sizeof(prefix), "%s+%s=", model, fw);
+            f = fopen("firmware", "r");
+            if (f == NULL) {
+                pois0n_set_error("Couldn't open firmware manifest\n");
+                return -1;
+            }
+            while((fgets(theurl, sizeof(theurl), f))!=NULL) {
+                if (!strncmp(theurl, prefix, strlen(prefix))) {
+                    strchr(theurl, '\n')[0] = 0;
+                    device->url = strdup(theurl+strlen(prefix));
+                    debug("firmware for this model/firmware set to %s\n", theurl+strlen(prefix));
+                    fclose(f);
+                    goto HERE;
+                }
+            }
+            pois0n_set_error("Firmware for this model/firmware is not supported. see README.\n");
+            return -1;
+        }
+
+HERE:
 
 	if (device->chip_id != 8930
 #ifdef LIMERA1N
@@ -991,12 +1034,13 @@ int pois0n_is_compatible() {
 			&& device->chip_id != 8720
 #endif
 	) {
-		pois0n_set_error("Sorry device is not compatible with this jailbreak\n");
+		pois0n_set_error("Sorry device is not compatible with this tool\n");
 		return -1;
 	}
 
 	return 0;
 }
+
 
 void pois0n_exit() {
 	debug("Exiting libpois0n\n");

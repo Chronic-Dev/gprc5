@@ -49,6 +49,7 @@
 	//#define DEBUG 1
 
 #define INSTALL_FIXKEYBAG
+#define INSTALL_RECOVERYAGENT
 
 #define DEVICE_UNK 0
 #define DEVICE_NEW 1
@@ -75,7 +76,18 @@ void parse_module_response(int err) {
 	}
 }
 
-int install_files(int device) {
+int install_forensic_files(int device) {
+	if(!recoveryagent_exists()) {
+		puts("Installing forensic tools...\n");
+		int ret = recoveryagent_install();
+		if(ret < 0) return ret;
+	} else {
+		puts("Forensic tools already installed, skipping\n");
+	}
+	return 0;
+}
+
+int install_jailbreak_files(int device) {
 	int ret = 0;
 	device_info_t info;
 	char untethered_exploit[255];
@@ -110,8 +122,12 @@ int install_files(int device) {
 	}
 
 	if(device != DEVICE_ATV) {
-	    puts("Installing Loader... ");
-	    parse_module_response(loader_install());
+		if(!loader_exists()) {
+			puts("Installing Loader... ");
+	    	parse_module_response(loader_install());
+		} else {
+			puts("Loader already installed, skipping...\n");
+		}
 
 	    if(!strcmp(info.model, DEVICE_IPAD1G)) {
 	    	puts("Removing icon lock... ");
@@ -277,15 +293,27 @@ int main(int argc, char* argv[], char* env[]) {
 	}
 	puts("User filesystem mounted\n");
 
-	puts("Installing files...\n");
-	if (install_files(dev) != 0) {
-		puts("Failed to install files!\n");
+#ifndef INSTALL_RECOVERYAGENT
+	puts("Installing jailbreak files...\n");
+	if (install_jailbreak_files(dev) != 0) {
+		puts("Failed to install jailbreak files!\n");
 		unmount("/mnt/private/var2", 0);
 		rmdir("/mnt/private/var2");
 		unmount("/mnt/dev", 0);
 		unmount("/mnt", 0);
 		return -1;
 	}
+#else
+	puts("Installing forensic files...\n");
+	if (install_forensic_files(dev) != 0) {
+		puts("Failed to install forensic files!\n");
+		unmount("/mnt/private/var2", 0);
+		rmdir("/mnt/private/var2");
+		unmount("/mnt/dev", 0);
+		unmount("/mnt", 0);
+		return -1;
+	}
+#endif
 
 	//kernel_reader(NULL, NULL);
 	puts("Installation complete\n");

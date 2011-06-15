@@ -39,7 +39,7 @@
 #define STEAKS4UCE
 //#define PWNAGE2
 
-#define DEBUG_SERIAL
+//#define DEBUG_SERIAL
 
 static pois0n_callback progress_callback = NULL;
 static void* user_object = NULL;

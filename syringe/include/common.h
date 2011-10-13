@@ -58,6 +58,9 @@ extern "C" {
 #define error(...) fprintf(stderr, __VA_ARGS__)
 #define debug(...) if(libpois0n_debug) fprintf(stderr, __VA_ARGS__)
 
+int file_read(const char* file, unsigned char** buf, unsigned int* length);
+int file_write(const char* file, unsigned char* buf, unsigned int length);
+
 LIBSYRINGE_EXPORT int libpois0n_debug;
 LIBSYRINGE_EXPORT char libpois0n_error[255];
 

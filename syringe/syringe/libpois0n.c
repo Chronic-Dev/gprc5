@@ -28,7 +28,7 @@
 #include "libirecovery.h"
 
 #include "common.h"
-#include "ramdisk.h"
+//#include "ramdisk.h"
 #include "exploits.h"
 #include "payloads.h"
 	//#include "firmware.h"
@@ -133,12 +133,12 @@ int upload_dfu_image(const char* type) {
 	snprintf(image, 254, "%s.%s", type, device->model);
 
 	debug("Checking if %s already exists\n", image);
-	//if (stat(image, &buf) != 0) {
+	if (stat(image, &buf) != 0) {
 		if (fetch_dfu_image(type, image) < 0) {
 			error("Unable to upload DFU image\n");
 			return -1;
 		}
-	//}
+	}
 
 	if (client->mode != kDfuMode) {
 		debug("Resetting device counters\n");
@@ -463,10 +463,15 @@ int upload_devicetree() {
 }
 
 int upload_ramdisk() {
-	if (irecv_send_buffer(client, (unsigned char*) ramdisk_dmg, ramdisk_dmg_len, 0) < 0) {
-		pois0n_set_error("Unable upload ramdisk\n");
+	unsigned int ramdisk_dmg_len = 0;
+	unsigned char* ramdisk_dmg = NULL;
+	file_read("ramdisk.dmg", &ramdisk_dmg, &ramdisk_dmg_len);
+	if(ramdisk_dmg && ramdisk_dmg_len) irecv_send_buffer(client, ramdisk_dmg, ramdisk_dmg_len, 0);
+	else {
+		error("Unable to open ramdisk.dmg\n");
 		return -1;
 	}
+	free(ramdisk_dmg);
 	return 0;
 }
 
@@ -479,12 +484,12 @@ int upload_kernelcache() {
 	memset(&buf, '\0', sizeof(buf));
 	snprintf(kernelcache, 254, "kernelcache.release.%c%c%c", device->model[0], device->model[1], device->model[2]);
 	debug("Checking if kernelcache already exists\n");
-	//if (stat(kernelcache, &buf) != 0) {
+	if (stat(kernelcache, &buf) != 0) {
 		if (fetch_image(kernelcache, kernelcache) < 0) {
 			error("Unable to upload kernelcache\n");
 			return -1;
 		}
-	//}
+	}
 
 	debug("Resetting device counters\n");
 	error = irecv_reset_counters(client);
@@ -597,6 +602,18 @@ int fetchVersionURL()
 
 int boot_ramdisk() {
 	irecv_error_t error = IRECV_E_SUCCESS;
+
+	debug("Preparing to upload iBEC\n");
+	if(upload_ibec() < 0) {
+		error("Unable to upload iBEC to device\n");
+		return -1;
+	}
+
+	debug("Executing iBEC\n");
+
+	debug("Upload iBEC payload\n");
+
+
 	debug("Preparing to upload ramdisk\n");
 	if (upload_ramdisk() < 0) {
 		error("Unable to upload ramdisk\n");

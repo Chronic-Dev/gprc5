@@ -12,10 +12,12 @@ SOURCES = \
 	libpartial.c	\
 	libpois0n.c		\
 	libdioxin.c		\
+	patch.c \
+	functions.c \
 
 XPLAT_CFLAGS = -O3 -DCURL_STATICLIB=1
 PLAT_CFLAGS = 
-XPLAT_LIBRARIES = curl z
+XPLAT_LIBRARIES = curl z bz2
 PLAT_LIBRARIES =
 XPLAT_PREMADE_OBJECTS = exploits/limera1n.o exploits/steaks4uce.o
 PLAT_PREMADE_OBJECTS =

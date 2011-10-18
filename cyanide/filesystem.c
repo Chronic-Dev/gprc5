@@ -26,7 +26,7 @@ void(*fs_mount)(const char *partition, const char *type, const char *path) = NUL
 void(*fs_unmount)(const char *path) = SELF_FS_UNMOUNT;
 
 void* find_fs_mount() {
-	return find_function("fs_mount", TARGET_BASEADDR, TARGET_BASEADDR);
+	return find_function("fs_mount", gBaseaddr, gBaseaddr);
 }
 
 void* find_fs_unmount() {
@@ -35,7 +35,7 @@ void* find_fs_unmount() {
 
 void* find_fs_load_file() {
 	unsigned char* func = NULL;
-	unsigned char* fs_open = find_function("fs_open", TARGET_BASEADDR, TARGET_BASEADDR);
+	unsigned char* fs_open = find_function("fs_open", gBaseaddr, gBaseaddr);
 	printf("Found fs_open at 0x%x\n", fs_open);
 	if(fs_open != NULL) {
 		for(func = fs_open+1; *func != 0xB5; func++) {

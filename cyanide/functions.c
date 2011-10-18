@@ -37,7 +37,7 @@ static unsigned char* functions[][3] = {
 	{ "free", "heap_panic",  push_r4_to_r7_lr },
 	{ "fs_mount", "fs_mount", push_r4_to_r7_lr },
 	{ "cmd_ramdisk", "Ramdisk too large", push_r4_r5_r7_lr },
-	{ "cmd_go", "jumping into image", push_r7_lr },
+	{ "cmd_go", "Memory image not valid", push_r7_lr },
 	{ "image_load", "image validation failed but untrusted images are permitted", push_r4_to_r7_lr },
 	{ "fsboot", "root filesystem mount failed", push_r4_to_r7_lr },
 	{ "kernel_load", "rd=md0", push_r4_to_r7_lr },

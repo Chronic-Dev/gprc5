@@ -43,7 +43,12 @@
 #define free _free
 #define puts _puts
 #define printf _printf
-#define malloc _malloc
+#define malloc(x) _malloc(x, 1, 0)
+#define debug _debug
+#define serial_write(x) _serial_write(0, x, strlen(x));
+
+
+#define VERSION_5  1219
 
 typedef enum {
 	TRUE = 1,
@@ -57,8 +62,9 @@ typedef struct LinkedList {
 
 extern void(*_free)(void* ptr);
 extern void _puts(const char* message);
-extern void*(*_malloc)(unsigned int size);
+extern void*(*_malloc)(unsigned int size, int count, int zone);
 extern int(*_printf)(const char *format, ...);
+extern void(*_serial_write)(int bus, char* buffer, int size);
 
 extern void* gLoadaddr;
 extern void* gBaseaddr;
@@ -80,5 +86,6 @@ int common_init();
 int gpprintf(const char *format, ...);
 void printf_begin();
 void panic(const char* why);
+void _debug(const char *fmt, ...);
 
 #endif /* COMMON_H */

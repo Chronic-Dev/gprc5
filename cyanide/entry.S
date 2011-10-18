@@ -54,6 +54,13 @@ fiq_vector:		.word halt
 .set	PATCH_CMD2_1,	0x47184b00	@ _patch: LDR R3, =0x0A000000 @ BX R3
 .set	PATCH_CMD2_2,	0x0A000000	@ _patch: 0x0A000000
 
+.set	FP_CMD3_1,	0x47184b00	@ search: LDR R3, =0x40000000 @ BR R3
+.set	FP_CMD3_2,	0x40000000	@ search: 0x40000000
+.set	PATCH_CMD3_1,	0x47184b00	@ _patch: LDR R3, =0x42000000 @ BX R3
+.set	PATCH_CMD3_2,	0x42000000	@ _patch: 0x42000000
+
+.set	newer_loadaddr,		0x40000000
+.set	newer_payload_dest,	0x42000000
 .set	new_loadaddr,		0x41000000
 .set	new_payload_dest,	0x42000000
 .set	old_loadaddr,		0x09000000
@@ -63,6 +70,11 @@ fiq_vector:		.word halt
 @---------------------------------------------
 reset:
 	push	{r0-r12, lr}
+	;ldr r5, =new_loadaddr
+	;ldr r5, [r5]
+	;cmp r5, #0
+
+
 	mov	r5, pc
 	lsr	r5, #24
 	cmp	r5, #0x42
@@ -77,7 +89,15 @@ reset:
 	cmp	r5, #0x09
 	beq	relocate_old
 
+	cmp r5, #0x40
+	beq relocate_newer
+
 	b	halt
+
+relocate_newer:
+	ldr	r0, =newer_loadaddr
+	ldr	r1, =newer_payload_dest
+	b	relocate
 
 relocate_new:
 	ldr	r0, =new_loadaddr
@@ -140,8 +160,8 @@ patch:
 
 patch1:
 	ldr	r0, =FP_CMD_1
-	ldr	r1, =TARGET_BASEADDR
-	mov	r2, #0x2c000		@ search area
+	ldr	r1, =0x0
+	mov	r2, #0x40000		@ search area
 	ldr	r3, =FP_CMD_2
 	blx	find_64
 	cmp	r0, #0
@@ -154,8 +174,8 @@ patch1:
 
 patch2:
 	ldr	r0, =FP_CMD2_1
-	ldr	r1, =TARGET_BASEADDR
-	mov	r2, #0x24000		@ search area
+	ldr	r1, =0x0
+	mov	r2, #0x40000		@ search area
 	ldr	r3, =FP_CMD2_2
 	blx	find_64
 	cmp	r0, #0
@@ -167,6 +187,20 @@ patch2:
 	b	patch_done
 
 patch3:
+	ldr	r0, =FP_CMD3_1
+	ldr	r1, =0x0
+	mov	r2, #0x40000		@ search area
+	ldr	r3, =FP_CMD3_2
+	blx	find_64
+	cmp	r0, #0
+	beq	patch4
+	ldr	r1, =PATCH_CMD3_1
+	str	r1, [r0]
+	ldr	r1, =PATCH_CMD3_2
+	str	r1, [r0, #4]
+	b	patch_done
+
+patch4:
 
 patch_done:
 	pop	{pc}

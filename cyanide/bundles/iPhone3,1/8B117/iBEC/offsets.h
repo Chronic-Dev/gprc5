@@ -21,13 +21,15 @@
 #define OFFSETS_H
 
 // Base address
-#define TARGET_BASEADDR                   (0x5FF00000)
-
+//#define TARGET_BASEADDR                   (0x5FF00000)
+/*
 // Standard offsets
 #define TARGET_FREE                       (0x12BB8+1)	// image3_free
 #define TARGET_MALLOC                     (0x12BC4+1)	// image3_malloc
 #define TARGET_JUMP_TO                    (0x1684C+1)
-#define TARGET_PRINTF                     (0x2C3D4+1)
+*/
+//#define TARGET_PRINTF                     (0x2DFD0+1)
+/*
 #define TARGET_VPRINTF                    (0x2BCA4+1)
 
 // Command offsets
@@ -60,5 +62,5 @@
 
 // NVRAM offset
 #define TARGET_NVRAM_LIST                 (0x39958)
-
+*/
 #endif // OFFSETS_H

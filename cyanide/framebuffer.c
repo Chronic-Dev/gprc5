@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "font.h"
+#include "nvram.h"
 #include "device.h"
 #include "common.h"
 #include "commands.h"
@@ -35,6 +36,7 @@ static unsigned int gFbHeight;
 
 Bool gFbHasInit = FALSE;
 Bool gFbDisplayText = FALSE;
+unsigned char* gFramebuffer = NULL;
 
 static unsigned int gFbBackgroundColor;
 static unsigned int gFbForegroundColor;
@@ -45,7 +47,7 @@ inline int font_get_pixel(Font* font, int ch, int x, int y) {
 }
 
 volatile unsigned int* fb_get_pixel(register unsigned int x, register unsigned int y) {
-	return (((unsigned int*)FRAMEBUFFER) + (y * gFbWidth) + x);
+	return (((unsigned int*)gFramebuffer) + (y * gFbWidth) + x);
 }
 
 static void fb_scrollup() {
@@ -65,14 +67,22 @@ void fb_setup() {
 	gFbFont = (Font*) font_data;
 	gFbBackgroundColor = COLOR_BLACK;
 	gFbForegroundColor = COLOR_WHITE;
-	gFbWidth = FRAMEBUFFER_WIDTH;
-	gFbHeight = FRAMEBUFFER_HEIGHT;
+	if(strstr((void*) 0x200, "n90ap")) {
+		gFbWidth = 640;
+		gFbHeight = 960;
+	}
 	gFbTWidth = gFbWidth / gFbFont->width;
 	gFbTHeight = gFbHeight / gFbFont->height;
 }
 
 int fb_init() {
 	if(gFbHasInit) return 0;
+	NvramVar* var = nvram_find_var("framebuffer");
+	if(var == NULL) {
+		return -1;
+	}
+	gFramebuffer = var->integer;
+
 	fb_setup();
 	fb_clear();
     fb_set_loc(0,0);
@@ -123,7 +133,7 @@ int fb_cmd(int argc, CmdArg* argv) {
 
 void fb_clear() {
     unsigned int *p = 0;
-	for(p = (unsigned int*)FRAMEBUFFER; p < (unsigned int*)(FRAMEBUFFER + (gFbWidth * gFbHeight * 4)); p++) {
+	for(p = (unsigned int*)gFramebuffer; p < (unsigned int*)(gFramebuffer + (gFbWidth * gFbHeight * 4)); p++) {
         *p = gFbBackgroundColor;
     }
 }

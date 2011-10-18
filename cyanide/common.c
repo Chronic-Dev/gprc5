@@ -20,15 +20,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "stdarg.h"
 
 #include "task.h"
 #include "lock.h"
 #include "common.h"
 #include "framebuffer.h"
 
+
 void(*_free)(void* ptr) = NULL;
-void*(*_malloc)(unsigned int size) = NULL;
+void*(*_malloc)(unsigned int size, int count, int zone) = NULL;
 int(*_printf)(const char *fmt, ...) = NULL;
+void(*_serial_write)(int bus, char* buffer, int size) = NULL;
 
 void* gLoadaddr = NULL;
 void* gBaseaddr = NULL;
@@ -36,26 +39,50 @@ void* gRomBaseaddr = NULL;
 void* gBssBaseaddr = NULL;
 void* gBootBaseaddr = NULL;
 
+char* gDeviceString = (char*) 0x200;
+char* gVersionString = (char*) 0x280;
+char gVersionBuf[255];
+unsigned long gVersion = 0;
+
 int cout_count = 0;
 
+void _debug(const char* fmt, ...) {
+	char* buffer[1024];
+	memset(buffer, '\0', 1024);
 
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(buffer, 1023, fmt, args);
+	va_end(args);
+
+	serial_write(buffer);
+}
 
 void* find_printf() {
-	int i = 0;
-	int j = 0;
 	unsigned int sp;
+	int i = 0, j = 0;
 	unsigned int* stack = &sp;
-	void(*default_block_write)(void) = find_function("default_block_write", TARGET_BASEADDR, TARGET_BASEADDR);
+	void(*default_block_write)(void) = find_function("default_block_write", gBaseaddr, gBaseaddr);
 	default_block_write();
+	//hexdump(((unsigned char*) stack) - 0x100, 0x200);
 	for(i = 0; i < 0x100; i += 4) {
+		//default_block_write();
 		unsigned int value = *(stack - i);
-		if((value & 0xFFF00000) == TARGET_BASEADDR) {
+		//debug("value = 0x%08x\r\n", value);
+		if((value & 0xFFF00000) == gBaseaddr) {
 			for(j = 0; j < 0x100; j++) {
-				unsigned short* instruction = (unsigned short*)(value + j);
-				if(*instruction == 0xB40F) {
-					void(*debug)(const char* fmt, ...) = (void*) value + (j+1);
-					debug("stack[%d] = 0x%08x, value[%d] = 0x%04x\n", i, value, j, *instruction);
+				//unsigned int* arm = (unsigned int*)(value + j);
+				unsigned short* thumb = (unsigned short*)(value + j);
+				//debug("stack[%d] = 0x%08x, value[%d] = 0x%04x\r\n", i, value, j, *thumb);
+				if(*thumb == 0xB40F || *thumb == 0xB083) {
+					debug("stack[%d] = 0x%08x, value[%d] = 0x%04x\r\n", i, value, j, *thumb);
 					return (void*) value + (j+1);
+
+				// Added to detect top of printf in 5.x
+				//} else if(*arm == 0xB580B083) {
+				//	int(*print)(const char *fmt, ...) = (void*) value + (j+1);
+				//	print("ARM: stack[%d] = 0x%08x, value[%d] = 0x%08x\r\n", i, value, j, *arm);
+				//	return (void*) value + (j+1);
 				}
 			}
 		}
@@ -64,16 +91,52 @@ void* find_printf() {
 }
 
 void* find_free() {
-	return find_function("free", TARGET_BASEADDR, TARGET_BASEADDR);
+	return find_function("free", gBaseaddr, gBaseaddr);
 }
 
 void* find_malloc() {
-	void* bytes = patch_find(TARGET_BASEADDR, 0x40000, "\x80\xB5\x00\xAF\x01\x21\x00\x22", 8);
-	if (bytes==NULL) return NULL;
+	//
+	void* bytes = patch_find(gBaseaddr, 0x40000, "\x80\xB5\x00\xAF\x01\x21\x00\x22", 8);
+	if (bytes == NULL) {
+		bytes = patch_find(gBaseaddr, 0x40000, "\xB0\xB5\x01\xFB\x00\xF4", 6);
+		if(bytes == NULL) return NULL;
+	}
 	return bytes+1;
 }
 
 int common_init() {
+	memset(gVersionBuf, '\0', sizeof(gVersionBuf));
+	strcpy(gVersionBuf, gVersionString);
+	gVersionBuf[10] = '\0';
+
+	gVersion = strtoul(&gVersionBuf[6], NULL, 0);
+	if(strstr(gDeviceString, "n90ap")) {
+		if(gVersion >= 1219) {
+			gLoadaddr = 0x40000000;
+		} else {
+			gLoadaddr = 0x41000000;
+		}
+
+		gRomBaseaddr = (void*) 0xBF000000;
+		gBssBaseaddr = (void*) 0x84000000;
+		gBootBaseaddr = (void*) 0x5FF00000;
+		if(strstr(gDeviceString, "iBSS")) {
+			gBaseaddr = gBssBaseaddr;
+		} else
+		if(strstr(gDeviceString, "iBEC")) {
+			gBaseaddr = gBootBaseaddr;
+		} else
+		if(strstr(gDeviceString, "iBoot")) {
+			gBaseaddr = gBootBaseaddr;
+
+		}
+	}
+
+	_serial_write = find_function("uart_write", gBaseaddr, gBaseaddr);
+	if(_serial_write == NULL) {
+		return -1;
+	}
+
 	_printf = find_printf();
 	if(_printf == NULL) {
 		fb_print("Unable to find printf\n");
@@ -81,22 +144,31 @@ int common_init() {
 	} else {
 		printf("Found printf at 0x%x\n", _printf);
 	}
+	printf("%s\n%s\n", gDeviceString, gVersionString);
 
 	_malloc = find_malloc();
 	if(_malloc == NULL) {
 		puts("Unable to find malloc\n");
 		return -1;
+
 	} else {
 		printf("Found malloc at 0x%x\n", _malloc);
 	}
+	char* test = malloc(0x20);
+	if(test == NULL) {
+		printf("Unable to allocate test memory\n");
+	}
+	printf("memory allocated at 0x%08x\n", test);
 
 	_free = find_free();
 	if(_free == NULL) {
 		puts("Unable to find free\n");
 		return -1;
+
 	} else {
 		printf("Found free at 0x%x\n", _free);
 	}
+	printf("memory free successful\n");
 
 	return 0;
 }
@@ -109,24 +181,24 @@ void _puts(const char* message) {
 void hexdump(unsigned char* buf, unsigned int len) {
 	int i, j;
 	enter_critical_section();
-	printf("0x%08x: ", buf);
+	debug("0x%08x: ", buf);
 	for (i = 0; i < len; i++) {
 		if (i % 16 == 0 && i != 0) {
 			for (j=i-16; j < i; j++) {
 				unsigned char car = buf[j];
 				if (car < 0x20 || car > 0x7f) car = '.';
-				printf("%c", car);
+				debug("%c", car);
 			}
-			printf("\n0x%08x: ", buf+i);
+			debug("\r\n0x%08x: ", buf+i);
 		}
-		printf("%02x ", buf[i]);
+		debug("%02x ", buf[i]);
 	}
 
 	int done = (i % 16);
 	int remains = 16 - done;
 	if (done > 0) {
 		for (j = 0; j < remains; j++) {
-			printf("   ");
+			debug("   ");
 		}
 	}
 
@@ -135,11 +207,11 @@ void hexdump(unsigned char* buf, unsigned int len) {
 		for (j = (i - done); j < i; j++) {
 			unsigned char car = buf[j];
 			if (car < 0x20 || car > 0x7f) car = '.';
-			printf("%c", car);
+			debug("%c", car);
 		}
 	}
 
-	printf("\n\n");
+	debug("\r\n\n");
 	exit_critical_section();
 }
 

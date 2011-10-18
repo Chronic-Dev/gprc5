@@ -188,39 +188,53 @@ struct irecv_device {
 	const char* model;
 	unsigned int board_id;
 	unsigned int chip_id;
-	char* url;
+	char* url_old;
+	char* url_new;
 };
 
 static const struct irecv_device irecv_devices[] = {
 	{  DEVICE_IPHONE2G,   "iPhone1,1",  "m68ap",   BDID_IPHONE2G,     CPID_IPHONE2G,
-	"http://appldnld.apple.com.edgesuite.net/content.info.apple.com/iPhone/061-7481.20100202.4orot/iPhone1,1_3.1.3_7E18_Restore.ipsw" },
+			"http://appldnld.apple.com.edgesuite.net/content.info.apple.com/iPhone/061-7481.20100202.4orot/iPhone1,1_3.1.3_7E18_Restore.ipsw",
+			"http://appldnld.apple.com.edgesuite.net/content.info.apple.com/iPhone/061-7481.20100202.4orot/iPhone1,1_3.1.3_7E18_Restore.ipsw" },
 	{  DEVICE_IPOD1G,     "iPod1,1",    "n45ap",   BDID_IPOD1G,       CPID_IPOD1G,
-	"http://appldnld.apple.com.edgesuite.net/content.info.apple.com/iPod/SBML/osx/bundles/061-4841.20080714.bgy8O/iPod1,1_1.1.5_4B1_Restore.ipsw" },
+			"http://appldnld.apple.com.edgesuite.net/content.info.apple.com/iPod/SBML/osx/bundles/061-4841.20080714.bgy8O/iPod1,1_1.1.5_4B1_Restore.ipsw",
+			"http://appldnld.apple.com.edgesuite.net/content.info.apple.com/iPod/SBML/osx/bundles/061-4841.20080714.bgy8O/iPod1,1_1.1.5_4B1_Restore.ipsw" },
 	{  DEVICE_IPHONE3G,   "iPhone1,2",  "n82ap",   BDID_IPHONE3G,     CPID_IPHONE3G,
-	"http://appldnld.apple.com/iPhone4/061-9853.20101122.Vfgt5/iPhone1,2_4.2.1_8C148_Restore.ipsw" },
+			"http://appldnld.apple.com/iPhone4/061-9853.20101122.Vfgt5/iPhone1,2_4.2.1_8C148_Restore.ipsw",
+			"http://appldnld.apple.com/iPhone4/061-9853.20101122.Vfgt5/iPhone1,2_4.2.1_8C148_Restore.ipsw" },
 	{  DEVICE_IPOD2G,     "iPod2,1",    "n72ap",   BDID_IPOD2G,       CPID_IPOD2G,
-	"http://appldnld.apple.com/iPhone4/061-9855.20101122.Lrft6/iPod2,1_4.2.1_8C148_Restore.ipsw" },
+			"http://appldnld.apple.com/iPhone4/061-9855.20101122.Lrft6/iPod2,1_4.2.1_8C148_Restore.ipsw",
+			"http://appldnld.apple.com/iPhone4/061-9855.20101122.Lrft6/iPod2,1_4.2.1_8C148_Restore.ipsw" },
 	{  DEVICE_IPHONE3GS,  "iPhone2,1",  "n88ap",   BDID_IPHONE3GS,    CPID_IPHONE3GS,
-	"http://appldnld.apple.com/iPhone4/041-1009.20110503.M73Yr/iPhone2,1_4.3.3_8J2_Restore.ipsw" },
+			"http://appldnld.apple.com/iPhone4/041-1009.20110503.M73Yr/iPhone2,1_4.3.3_8J2_Restore.ipsw",
+			"http://appldnld.apple.com/iPhone4/041-1009.20110503.M73Yr/iPhone2,1_4.3.3_8J2_Restore.ipsw" },
 	{  DEVICE_IPOD3G,     "iPod3,1",    "n18ap",   BDID_IPOD3G,       CPID_IPOD3G,
-	"http://appldnld.apple.com/iPhone4/041-1021.20110503.8Lfs1/iPod3,1_4.3.3_8J2_Restore.ipsw" },
+			"http://appldnld.apple.com/iPhone4/041-1021.20110503.8Lfs1/iPod3,1_4.3.3_8J2_Restore.ipsw",
+			"http://appldnld.apple.com/iPhone4/041-1021.20110503.8Lfs1/iPod3,1_4.3.3_8J2_Restore.ipsw" },
 	{  DEVICE_IPAD1G,     "iPad1,1",    "k48ap",   BDID_IPAD1G,       CPID_IPAD1G,
-	"http://appldnld.apple.com/iPhone4/041-1010.20110503.ScEp3/iPad1,1_4.3.3_8J3_Restore.ipsw" },
+			"http://appldnld.apple.com/iPhone4/041-1010.20110503.ScEp3/iPad1,1_4.3.3_8J3_Restore.ipsw",
+			"http://appldnld.apple.com/iPhone4/041-1010.20110503.ScEp3/iPad1,1_4.3.3_8J3_Restore.ipsw" },
 	{  DEVICE_IPHONE4,    "iPhone3,1",  "n90ap",   BDID_IPHONE4,      CPID_IPHONE4,
-	// "http://appldnld.apple.com/iPhone4/041-1011.20110503.q7fGc/iPhone3,1_4.3.3_8J2_Restore.ipsw" },
-	"http://appldnld.apple.com/iPhone4/041-8358.20111012.FFc34/iPhone3,1_5.0_9A334_Restore.ipsw" },
+			"http://appldnld.apple.com/iPhone4/041-1011.20110503.q7fGc/iPhone3,1_4.3.3_8J2_Restore.ipsw",
+			"http://appldnld.apple.com/iPhone4/041-8358.20111012.FFc34/iPhone3,1_5.0_9A334_Restore.ipsw" },
 	{  DEVICE_IPOD4G,     "iPod4,1",    "n81ap",   BDID_IPOD4G,       CPID_IPOD4G,
-	"http://appldnld.apple.com/iPhone4/041-1015.20110503.d7i57/iPod4,1_4.3.3_8J2_Restore.ipsw" },
+			"http://appldnld.apple.com/iPhone4/041-1015.20110503.d7i57/iPod4,1_4.3.3_8J2_Restore.ipsw",
+			"http://appldnld.apple.com/iPhone4/041-1015.20110503.d7i57/iPod4,1_4.3.3_8J2_Restore.ipsw" },
 	{  DEVICE_APPLETV2G,   "AppleTV2,1", "k66ap",   BDID_APPLETV2G,    CPID_APPLETV2G,
-	"http://appldnld.apple.com/AppleTV/041-0596.20110511.Zz7mC/AppleTV2,1_4.3_8F305_Restore.ipsw" },
+			"http://appldnld.apple.com/AppleTV/041-0596.20110511.Zz7mC/AppleTV2,1_4.3_8F305_Restore.ipsw",
+			"http://appldnld.apple.com/AppleTV/041-0596.20110511.Zz7mC/AppleTV2,1_4.3_8F305_Restore.ipsw" },
 	{ DEVICE_IPHONE42,    "iPhone3,3",  "n92ap",   BDID_IPHONE42,     CPID_IPHONE42,
-	"http://appldnld.apple.com/iPhone4/041-1022.20110503.5g8k7/iPhone3,3_4.2.8_8E401_Restore.ipsw" },
+			"http://appldnld.apple.com/iPhone4/041-1022.20110503.5g8k7/iPhone3,3_4.2.8_8E401_Restore.ipsw",
+			"http://appldnld.apple.com/iPhone4/041-1022.20110503.5g8k7/iPhone3,3_4.2.8_8E401_Restore.ipsw" },
 	{ DEVICE_IPAD2G_WIFI, "iPad2,1",    "k93ap",   BDID_IPAD2G_WIFI,  CPID_IPAD2G_WIFI,
-	"http://appldnld.apple.com/iPhone4/041-0368.20110311.SwtHr/iPad2,1_4.3_8F191_Restore.ipsw" },
+			"http://appldnld.apple.com/iPhone4/041-0368.20110311.SwtHr/iPad2,1_4.3_8F191_Restore.ipsw",
+			"http://appldnld.apple.com/iPhone4/041-0368.20110311.SwtHr/iPad2,1_4.3_8F191_Restore.ipsw" },
 	{ DEVICE_IPAD2G_GSM,  "iPad2,2",    "k94ap",   BDID_IPAD2G_GSM,   CPID_IPAD2G_GSM,
-	"http://appldnld.apple.com/iPhone4/041-0369.20110311.Xzsew/iPad2,2_4.3_8F191_Restore.ipsw" },
+			"http://appldnld.apple.com/iPhone4/041-0369.20110311.Xzsew/iPad2,2_4.3_8F191_Restore.ipsw",
+			"http://appldnld.apple.com/iPhone4/041-0369.20110311.Xzsew/iPad2,2_4.3_8F191_Restore.ipsw" },
 	{ DEVICE_IPAD2G_CDMA, "iPad2,3",    "k95ap",   BDID_IPAD2G_CDMA,  CPID_IPAD2G_CDMA,
-	"http://appldnld.apple.com/iPhone4/041-0334.20110311Plgt5/iPad2,3_4.3_8F191_Restore.ipsw" },
+			"http://appldnld.apple.com/iPhone4/041-0334.20110311Plgt5/iPad2,3_4.3_8F191_Restore.ipsw",
+			"http://appldnld.apple.com/iPhone4/041-0334.20110311Plgt5/iPad2,3_4.3_8F191_Restore.ipsw" },
 	{ -1,  NULL,        NULL,   -1,    -1,
 	NULL }
 };
@@ -228,6 +242,7 @@ static const struct irecv_device irecv_devices[] = {
 LIBIRECOVERY_EXPORT void irecv_set_debug_level(int level);
 LIBIRECOVERY_EXPORT const char* irecv_strerror(irecv_error_t error);
 LIBIRECOVERY_EXPORT irecv_error_t irecv_open_attempts(irecv_client_t* pclient, int attempts);
+LIBIRECOVERY_EXPORT irecv_error_t irecv_open_with_interface(irecv_client_t* pclient, int interface, int alt);
 LIBIRECOVERY_EXPORT irecv_error_t irecv_open_with_ECID(uint64_t ecid, irecv_client_t* pclient);
 LIBIRECOVERY_EXPORT irecv_error_t irecv_open(irecv_client_t* client);
 LIBIRECOVERY_EXPORT irecv_error_t irecv_reset(irecv_client_t client);

@@ -42,12 +42,14 @@ int(*load_ramdisk)(int argc) = NULL;
 
 void hooked(int flags, void* addr, int phymem);
 
+unsigned char orig_hooked[0x10];
+
 /*
  * Private Functions
  */
 
 void* find_cmd_list_begin() {
-	unsigned int reference = find_reference(TARGET_BASEADDR, TARGET_BASEADDR, 0x40000, "save current environment to flash");
+	unsigned int reference = find_reference(gBaseaddr, gBaseaddr, 0x40000, "save current environment to flash");
 	if(reference == 0) {
 		printf("Unable to find saveenv description reference\n");
 		return 0;
@@ -78,22 +80,38 @@ void* find_cmd_list_end() {
 
 void* find_jump_to() {
 	void* bytes = NULL;
-	if(strstr((char*) (TARGET_BASEADDR + 0x200), "n72ap")) {
-		bytes = patch_find(TARGET_BASEADDR, 0x40000, "\xf0\xb5\x03\xaf\x04\x1c\x15\x1c", 8);
-		bytes++;
+	if(strstr((char*) (gBaseaddr + 0x200), "n72ap")) {
+		bytes = patch_find(gBaseaddr, 0x40000, "\xf0\xb5\x03\xaf\x04\x1c\x15\x1c", 8);
+		if(bytes) {
+			bytes++;
+		}
+
 	} else {
-		bytes = patch_find(TARGET_BASEADDR, 0x40000, "\x80\xb5\x00\xaf\x04\x46\x15\x46", 8);
-		bytes++;
+		bytes = patch_find(gBaseaddr, 0x48000, "\x80\xb5\x00\xaf\x04\x46\x15\x46", 8);
+		if(bytes == NULL) {
+			void* jumper = patch_find(gBaseaddr, 0x48000, "\x20\x46\x0A\x46\x0B\x46\xA8\x47", 8);
+			printf("Found jumper at %p\n", jumper);
+			if(jumper) {
+				bytes = patch_rfind(jumper, 0x200, "\xF0\xB5", 2);
+				printf("Found jumper at %p\n", bytes);
+				if(bytes) {
+					bytes++;
+				}
+			}
+
+		} else {
+			bytes++;
+		}
 	}
 	return bytes;
 }
 
 void* find_load_ramdisk() {
-	return find_function("cmd_ramdisk", TARGET_BASEADDR, TARGET_BASEADDR);
+	return find_function("cmd_ramdisk", gBaseaddr, gBaseaddr);
 }
 
 void* find_fsboot() {
-	return find_function("fsboot", TARGET_BASEADDR, TARGET_BASEADDR);
+	return find_function("fsboot", gBaseaddr, gBaseaddr);
 }
 
 int cmd_init() {
@@ -339,11 +357,11 @@ int cmd_fsboot(int argc, CmdArg* argv) {
 	}
 
 	// search for jump_to function
-	if(strstr((char*) (TARGET_BASEADDR + 0x200), "n72ap")) {
-		jump_to = patch_find(TARGET_BASEADDR, 0x30000, "\xf0\xb5\x03\xaf\x04\x1c\x15\x1c", 8);
+	if(strstr((char*) (gBaseaddr + 0x200), "n72ap")) {
+		jump_to = patch_find(gBaseaddr, 0x30000, "\xf0\xb5\x03\xaf\x04\x1c\x15\x1c", 8);
 	} else {
 		// 80  B5  00  AF  04  46  15  46
-		jump_to = patch_find(TARGET_BASEADDR, 0x30000, "\x80\xb5\x00\xaf\x04\x46\x15\x46", 8);
+		jump_to = patch_find(gBaseaddr, 0x30000, "\x80\xb5\x00\xaf\x04\x46\x15\x46", 8);
 	}
 	printf("Found jump_to function at %p\n", jump_to);
 
@@ -352,12 +370,12 @@ int cmd_fsboot(int argc, CmdArg* argv) {
 
 	printf("Hooked jump_to function to call 0x%08x\n", hooker);
 	if(fsboot == NULL) {
-		if(strstr((char*) (TARGET_BASEADDR + 0x200), "n72ap")) {
-			fsboot = patch_find(TARGET_BASEADDR, 0x30000, "\xf0\xb5\x03\xaf\x11\x48", 6);
-		} else if(strstr((char*) (TARGET_BASEADDR + 0x200), "k66ap")) {
-			fsboot = patch_find(TARGET_BASEADDR, 0x30000, "\xf0\xb5\x03\xaf\x81\xb0", 6);
+		if(strstr((char*) (gBaseaddr + 0x200), "n72ap")) {
+			fsboot = patch_find(gBaseaddr, 0x30000, "\xf0\xb5\x03\xaf\x11\x48", 6);
+		} else if(strstr((char*) (gBaseaddr + 0x200), "k66ap")) {
+			fsboot = patch_find(gBaseaddr, 0x30000, "\xf0\xb5\x03\xaf\x81\xb0", 6);
 		} else {
-			fsboot = patch_find(TARGET_BASEADDR, 0x30000, "\xb0\xb5\x02\xaf\x11\x48", 6);
+			fsboot = patch_find(gBaseaddr, 0x30000, "\xb0\xb5\x02\xaf\x11\x48", 6);
 		}
 		printf("Found fsboot function at %p\n", fsboot);
 	}
@@ -379,14 +397,22 @@ int cmd_rdboot(int argc, CmdArg* argv) {
 	}
 
 	// search for jump_to function
-	if(strstr((char*) (TARGET_BASEADDR + 0x200), "n72ap")) {
-		jump_to = patch_find(TARGET_BASEADDR, 0x30000, "\xf0\xb5\x03\xaf\x04\x1c\x15\x1c", 8);
+	if(strstr((char*) (gBaseaddr + 0x200), "n72ap")) {
+		jump_to = patch_find(gBaseaddr, 0x30000, "\xf0\xb5\x03\xaf\x04\x1c\x15\x1c", 8);
 	} else {
 		// 80  B5  00  AF  04  46  15  46
-		jump_to = patch_find(TARGET_BASEADDR, 0x30000, "\x80\xb5\x00\xaf\x04\x46\x15\x46", 8);
+		jump_to = patch_find(gBaseaddr, 0x30000, "\x80\xb5\x00\xaf\x04\x46\x15\x46", 8);
+		if(jump_to == NULL) {
+			jump_to = find_jump_to();
+			if(jump_to) {
+				jump_to--;
+			}
+		}
 	}
 	printf("Found jump_to function at %p\n", jump_to);
 
+	memcpy(orig_hooked, jump_to, 8);
+	hexdump(orig_hooked, 8);
 	memcpy(jump_to, "\x00\x4b\x98\x47", 4);
 	memcpy(jump_to+4, &hooker, 4);
 
@@ -399,10 +425,10 @@ int cmd_rdboot(int argc, CmdArg* argv) {
 }
 
 int cmd_test(int argc, CmdArg* argv) {
-	printf("aes_crypto_cmd: 0x%08x\n", find_function("aes_crypto_cmd", TARGET_BASEADDR, TARGET_BASEADDR));
-	printf("free: 0x%08x\n", find_function("free", TARGET_BASEADDR, TARGET_BASEADDR));
-	printf("cmd_ramdisk: 0x%08x\n", find_function("cmd_ramdisk", TARGET_BASEADDR, TARGET_BASEADDR));
-	printf("fs_mount: 0x%08x\n", find_function("fs_mount", TARGET_BASEADDR, TARGET_BASEADDR));
+	printf("aes_crypto_cmd: 0x%08x\n", find_function("aes_crypto_cmd", gBaseaddr, gBaseaddr));
+	printf("free: 0x%08x\n", find_function("free", gBaseaddr, gBaseaddr));
+	printf("cmd_ramdisk: 0x%08x\n", find_function("cmd_ramdisk", gBaseaddr, gBaseaddr));
+	printf("fs_mount: 0x%08x\n", find_function("fs_mount", gBaseaddr, gBaseaddr));
 	return 0;
 }
 
@@ -424,18 +450,28 @@ void clear_icache() {
 void hooked(int flags, void* addr, int phymem) {
 	// patch kernel
 	printf("Entered hooked jump_to function!!!\n");
+	printf("flags = %d, addr = %p, phymem = 0x%08x\n", flags, addr, phymem);
+	//hexdump(addr, 0x200);
+	//hexdump(phymem, 0x200);
+	hexdump(0x44000000, 0x200);
 	printf("Patching kernel\n");
-	patch_kernel((void*)(LOADADDR - 0x1000000), 0xA00000);
+	//patch_kernel((void*)(gLoadaddr - 0x1000000), 0xF00000);
+	//patch_kernel(addr, 0xA00000);
+	patch_kernel((void*)0x44000000, 0xA00000);
+	void(*kern)(void*, int, int, int) = (void*) addr;
+	printf("Jumping into kernel NOW!!!!\n");
+	kern(phymem, 0, 0, 0);
 
 	printf("Replace hooking code with original\n");
-	if(strstr((char*) (TARGET_BASEADDR + 0x200), "n72ap")) {
+	if(strstr((char*) (gBaseaddr + 0x200), "n72ap")) {
 		memcpy(jump_to, "\xf0\xb5\x03\xaf\x04\x1c\x15\x1c", 8);
 	} else {
 		memcpy(jump_to, "\x80\xb5\x00\xaf\x04\x46\x15\x46", 8);
 	}
+	memcpy(jump_to, orig_hooked, 8);
 	clear_icache();
 
 	jump_to++;
 	printf("Calling %p\n", jump_to);
-	jump_to(flags, addr, phymem);
+	//jump_to(flags, addr, phymem);
 }

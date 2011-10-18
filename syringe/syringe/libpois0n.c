@@ -40,7 +40,25 @@
 #define STEAKS4UCE
 //#define PWNAGE2
 
-	//#define DEBUG_SERIAL
+#define DEBUG_SERIAL
+
+int upload_new_ibss();
+int upload_new_ibec();
+int upload_new_iboot();
+int upload_new_devicetree();
+
+int upload_old_ibss();
+int upload_old_ibec();
+int upload_old_iboot();
+int upload_old_devicetree();
+
+int fetch_new_image(const char* path, const char* output);
+int fetch_new_dfu_image(const char* type, const char* output);
+int fetch_new_firmware_image(const char* type, const char* output);
+
+int fetch_old_image(const char* path, const char* output);
+int fetch_old_dfu_image(const char* type, const char* output);
+int fetch_old_firmware_image(const char* type, const char* output);
 
 static pois0n_callback progress_callback = NULL;
 static void* user_object = NULL;
@@ -79,9 +97,9 @@ char* send_command(char* command) {
 	return ret;
 }
 
-int fetch_image(const char* path, const char* output) {
+int fetch_new_image(const char* path, const char* output) {
 	debug("Fetching %s...\n", path);
-	if (download_file_from_zip(device->url, path, output, &download_callback) != 0) {
+	if (download_file_from_zip(device->url_new, path, output, &download_callback) != 0) {
 		pois0n_set_error("Unable to connect to the network");
 		return -1;
 	}
@@ -89,7 +107,17 @@ int fetch_image(const char* path, const char* output) {
 	return 0;
 }
 
-int fetch_dfu_image(const char* type, const char* output) {
+int fetch_old_image(const char* path, const char* output) {
+	debug("Fetching %s...\n", path);
+	if (download_file_from_zip(device->url_old, path, output, &download_callback) != 0) {
+		pois0n_set_error("Unable to connect to the network");
+		return -1;
+	}
+
+	return 0;
+}
+
+int fetch_new_dfu_image(const char* type, const char* output) {
 	char name[64];
 	char path[255];
 
@@ -99,7 +127,7 @@ int fetch_dfu_image(const char* type, const char* output) {
 	snprintf(path, 254, "Firmware/dfu/%s", name);
 
 	debug("Preparing to fetch DFU image from Apple's servers\n");
-	if (fetch_image(path, output) < 0) {
+	if (fetch_new_image(path, output) < 0) {
 		error("Unable to fetch DFU image from Apple's servers\n");
 		return -1;
 	}
@@ -107,7 +135,25 @@ int fetch_dfu_image(const char* type, const char* output) {
 	return 0;
 }
 
-int fetch_firmware_image(const char* type, const char* output) {
+int fetch_old_dfu_image(const char* type, const char* output) {
+	char name[64];
+	char path[255];
+
+	memset(name, '\0', 64);
+	memset(path, '\0', 255);
+	snprintf(name, 63, "%s.%s.RELEASE.dfu", type, device->model);
+	snprintf(path, 254, "Firmware/dfu/%s", name);
+
+	debug("Preparing to fetch DFU image from Apple's servers\n");
+	if (fetch_old_image(path, output) < 0) {
+		error("Unable to fetch DFU image from Apple's servers\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+int fetch_new_firmware_image(const char* type, const char* output) {
 	char name[64];
 	char path[255];
 
@@ -117,24 +163,41 @@ int fetch_firmware_image(const char* type, const char* output) {
 	snprintf(path, 254, "Firmware/all_flash/all_flash.%s.production/%s", device->model, name);
 
 	debug("Preparing to fetch firmware image from Apple's servers\n");
-	if (fetch_image(path, output) < 0) {
+	if (fetch_new_image(path, output) < 0) {
 		error("Unable to fetch firmware image from Apple's servers\n");
 	}
 
 	return 0;
 }
 
-int upload_dfu_image(const char* type) {
+int fetch_old_firmware_image(const char* type, const char* output) {
+	char name[64];
+	char path[255];
+
+	memset(name, '\0', 64);
+	memset(path, '\0', 255);
+	snprintf(name, 63, "%s.%s.img3", type, device->model);
+	snprintf(path, 254, "Firmware/all_flash/all_flash.%s.production/%s", device->model, name);
+
+	debug("Preparing to fetch firmware image from Apple's servers\n");
+	if (fetch_old_image(path, output) < 0) {
+		error("Unable to fetch firmware image from Apple's servers\n");
+	}
+
+	return 0;
+}
+
+int upload_new_dfu_image(const char* type) {
 	char image[255];
 	struct stat buf;
 	irecv_error_t error = IRECV_E_SUCCESS;
 
 	memset(image, '\0', 255);
-	snprintf(image, 254, "%s.%s", type, device->model);
+	snprintf(image, 254, "%s.%s.new", type, device->model);
 
 	debug("Checking if %s already exists\n", image);
 	if (stat(image, &buf) != 0) {
-		if (fetch_dfu_image(type, image) < 0) {
+		if (fetch_new_dfu_image(type, image) < 0) {
 			error("Unable to upload DFU image\n");
 			return -1;
 		}
@@ -158,21 +221,89 @@ int upload_dfu_image(const char* type) {
 	return 0;
 }
 
-int upload_firmware_image(const char* type) {
+int upload_old_dfu_image(const char* type) {
 	char image[255];
 	struct stat buf;
 	irecv_error_t error = IRECV_E_SUCCESS;
 
 	memset(image, '\0', 255);
-	snprintf(image, 254, "%s.%s", type, device->model);
+	snprintf(image, 254, "%s.%s.old", type, device->model);
 
 	debug("Checking if %s already exists\n", image);
-	//if ((image, &buf) != 0) {
-		if (fetch_firmware_image(type, image) < 0) {
+	if (stat(image, &buf) != 0) {
+		if (fetch_old_dfu_image(type, image) < 0) {
+			error("Unable to upload DFU image\n");
+			return -1;
+		}
+	}
+
+	if (client->mode != kDfuMode) {
+		debug("Resetting device counters\n");
+		error = irecv_reset_counters(client);
+		if (error != IRECV_E_SUCCESS) {
+			debug("%s\n", irecv_strerror(error));
+			return -1;
+		}
+	}
+
+	debug("Uploading %s to device\n", image);
+	error = irecv_send_file(client, image, 1);
+	if (error != IRECV_E_SUCCESS) {
+		debug("%s\n", irecv_strerror(error));
+		return -1;
+	}
+	return 0;
+}
+
+int upload_new_firmware_image(const char* type) {
+	char image[255];
+	struct stat buf;
+	irecv_error_t error = IRECV_E_SUCCESS;
+
+	memset(image, '\0', 255);
+	snprintf(image, 254, "%s.%s.new", type, device->model);
+
+	debug("Checking if %s already exists\n", image);
+	if (stat(image, &buf) != 0) {
+		if (fetch_new_firmware_image(type, image) < 0) {
 			error("Unable to upload firmware image\n");
 			return -1;
 		}
-	//}
+	}
+
+	debug("Resetting device counters\n");
+	error = irecv_reset_counters(client);
+	if (error != IRECV_E_SUCCESS) {
+		pois0n_set_error("Unable to upload firmware image\n");
+		debug("%s\n", irecv_strerror(error));
+		return -1;
+	}
+
+	debug("Uploading %s to device\n", image);
+	error = irecv_send_file(client, image, 1);
+	if (error != IRECV_E_SUCCESS) {
+		pois0n_set_error("Unable to upload firmware image\n");
+		debug("%s\n", irecv_strerror(error));
+		return -1;
+	}
+	return 0;
+}
+
+int upload_old_firmware_image(const char* type) {
+	char image[255];
+	struct stat buf;
+	irecv_error_t error = IRECV_E_SUCCESS;
+
+	memset(image, '\0', 255);
+	snprintf(image, 254, "%s.%s.old", type, device->model);
+
+	debug("Checking if %s already exists\n", image);
+	if (stat(image, &buf) != 0) {
+		if (fetch_old_firmware_image(type, image) < 0) {
+			error("Unable to upload firmware image\n");
+			return -1;
+		}
+	}
 
 	debug("Resetting device counters\n");
 	error = irecv_reset_counters(client);
@@ -429,16 +560,32 @@ int upload_firmware_payload(const char* type) {
 	return 0;
 }
 
-int upload_ibss() {
-	if (upload_dfu_image("iBSS") < 0) {
+int upload_new_ibss() {
+	if (upload_new_dfu_image("iBSS") < 0) {
 		error("Unable upload iBSS\n");
 		return -1;
 	}
 	return 0;
 }
 
-int upload_ibec() {
-	if (upload_dfu_image("iBEC") < 0) {
+int upload_old_ibss() {
+	if (upload_old_dfu_image("iBSS") < 0) {
+		error("Unable upload iBSS\n");
+		return -1;
+	}
+	return 0;
+}
+
+int upload_new_ibec() {
+	if (upload_new_dfu_image("iBEC") < 0) {
+		error("Unable upload iBEC\n");
+		return -1;
+	}
+	return 0;
+}
+
+int upload_old_ibec() {
+	if (upload_old_dfu_image("iBEC") < 0) {
 		error("Unable upload iBEC\n");
 		return -1;
 	}
@@ -446,16 +593,32 @@ int upload_ibec() {
 }
 
 
-int upload_iboot() {
-	if (upload_firmware_image("iBoot") < 0) {
+int upload_new_iboot() {
+	if (upload_new_firmware_image("iBoot") < 0) {
 		error("Unable upload iBoot\n");
 		return -1;
 	}
 	return 0;
 }
 
-int upload_devicetree() {
-	if (upload_firmware_image("DeviceTree") < 0) {
+int upload_old_iboot() {
+	if (upload_old_firmware_image("iBoot") < 0) {
+		error("Unable upload iBoot\n");
+		return -1;
+	}
+	return 0;
+}
+
+int upload_new_devicetree() {
+	if (upload_new_firmware_image("DeviceTree") < 0) {
+		error("Unable upload DeviceTree\n");
+		return -1;
+	}
+	return 0;
+}
+
+int upload_old_devicetree() {
+	if (upload_old_firmware_image("DeviceTree") < 0) {
 		error("Unable upload DeviceTree\n");
 		return -1;
 	}
@@ -466,8 +629,9 @@ int upload_ramdisk() {
 	unsigned int ramdisk_dmg_len = 0;
 	unsigned char* ramdisk_dmg = NULL;
 	file_read("ramdisk.dmg", &ramdisk_dmg, &ramdisk_dmg_len);
-	if(ramdisk_dmg && ramdisk_dmg_len) irecv_send_buffer(client, ramdisk_dmg, ramdisk_dmg_len, 0);
-	else {
+	if(ramdisk_dmg && ramdisk_dmg_len) {
+		irecv_send_buffer(client, ramdisk_dmg, ramdisk_dmg_len, 0);
+	} else {
 		error("Unable to open ramdisk.dmg\n");
 		return -1;
 	}
@@ -475,7 +639,7 @@ int upload_ramdisk() {
 	return 0;
 }
 
-int upload_kernelcache() {
+int upload_new_kernelcache() {
 	struct stat buf;
 	char kernelcache[255];
 	irecv_error_t error = IRECV_E_SUCCESS;
@@ -485,7 +649,7 @@ int upload_kernelcache() {
 	snprintf(kernelcache, 254, "kernelcache.release.%c%c%c", device->model[0], device->model[1], device->model[2]);
 	debug("Checking if kernelcache already exists\n");
 	if (stat(kernelcache, &buf) != 0) {
-		if (fetch_image(kernelcache, kernelcache) < 0) {
+		if (fetch_new_image(kernelcache, kernelcache) < 0) {
 			error("Unable to upload kernelcache\n");
 			return -1;
 		}
@@ -499,7 +663,41 @@ int upload_kernelcache() {
 		return -1;
 	}
 
-	error = irecv_send_file(client, kernelcache, 1);
+	error = irecv_send_file(client, kernelcache, 0);
+	if (error != IRECV_E_SUCCESS) {
+		debug("%s\n", irecv_strerror(error));
+		pois0n_set_error("Unable upload kernelcache\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+int upload_old_kernelcache() {
+	struct stat buf;
+	char kernelcache[255];
+	irecv_error_t error = IRECV_E_SUCCESS;
+
+	memset(kernelcache, '\0', 255);
+	memset(&buf, '\0', sizeof(buf));
+	snprintf(kernelcache, 254, "kernelcache.release.%c%c%c", device->model[0], device->model[1], device->model[2]);
+	debug("Checking if kernelcache already exists\n");
+	if (stat(kernelcache, &buf) != 0) {
+		if (fetch_old_image(kernelcache, kernelcache) < 0) {
+			error("Unable to upload kernelcache\n");
+			return -1;
+		}
+	}
+
+	debug("Resetting device counters\n");
+	error = irecv_reset_counters(client);
+	if (error != IRECV_E_SUCCESS) {
+		debug("%s\n", irecv_strerror(error));
+		pois0n_set_error("Unable upload kernelcache\n");
+		return -1;
+	}
+
+	error = irecv_send_file(client, kernelcache, 0);
 	if (error != IRECV_E_SUCCESS) {
 		debug("%s\n", irecv_strerror(error));
 		pois0n_set_error("Unable upload kernelcache\n");
@@ -603,16 +801,117 @@ int fetchVersionURL()
 int boot_ramdisk() {
 	irecv_error_t error = IRECV_E_SUCCESS;
 
-	debug("Preparing to upload iBEC\n");
-	if(upload_ibec() < 0) {
+	debug("Preparing to upload old iBEC\n");
+	if(upload_old_ibec() < 0) {
 		error("Unable to upload iBEC to device\n");
 		return -1;
 	}
 
-	debug("Executing iBEC\n");
+	debug("Decrypting old iBEC\n");
+    error = irecv_send_command(client, "go image decrypt $loadaddr");
+    if(error != IRECV_E_SUCCESS) {
+		error("Unable to upload iBEC\n");
+		return -1;
+	}
 
-	debug("Upload iBEC payload\n");
+    debug("Moving old iBEC into place\n");
+    if(device->chip_id == 8720) {
+        error = irecv_send_command(client, "go memory move 0x09000040 $loadaddr 0x48000");
+    } else {
+        error = irecv_send_command(client, "go memory move 0x41000040 $loadaddr 0x48000");
+    }
+    if(error != IRECV_E_SUCCESS) {
+        pois0n_set_error("Unable to append old iBEC\n");
+        return -1;
+    }
 
+	debug("Patching old iBEC\n");
+	error = irecv_send_command(client, "go patch $loadaddr 0x48000");
+
+	debug("Jumping into old iBEC\n");
+	error = irecv_send_command(client, "go jump $loadaddr");
+	if(error != IRECV_E_SUCCESS) {
+		pois0n_set_error("Unable to hook jump_to\n");
+		return -1;
+	}
+
+	debug("Reconnecting to device\n");
+	client = irecv_reconnect(client, 10);
+	if (client == NULL) {
+		error("Unable to reconnect\n");
+		return -1;
+	}
+
+	debug("Preparing to upload old iBEC payload\n");
+	upload_ibec_payload();
+	error = irecv_send_command(client, "go");
+	debug("Preparing to upload new iBEC\n");
+	if(upload_new_ibec() < 0) {
+		error("Unable to upload iBEC to device\n");
+		return -1;
+	}
+
+	debug("Decrypting new iBEC\n");
+    error = irecv_send_command(client, "go image decrypt $loadaddr");
+    if(error != IRECV_E_SUCCESS) {
+		error("Unable to upload iBEC\n");
+		return -1;
+	}
+
+    debug("Moving new iBEC into place\n");
+    if(device->chip_id == 8720) {
+        error = irecv_send_command(client, "go memory move 0x09000040 $loadaddr 0x48000");
+    } else {
+        error = irecv_send_command(client, "go memory move 0x41000040 $loadaddr 0x48000");
+    }
+    if(error != IRECV_E_SUCCESS) {
+        pois0n_set_error("Unable to append iBEC\n");
+        return -1;
+    }
+
+	debug("Patching iBEC\n");
+	error = irecv_send_command(client, "go patch $loadaddr 0x48000");
+
+	//int offset = send_command("go memory search 0x41000000 0x48000 80B56F4684B04FF0");
+	error = irecv_send_command(client, "go mw 0x41000F40 0x47184b00");
+	error = irecv_send_command(client, "go mw 0x41000F44 0x40000000");
+	//offset = send_command("go memory search 0x41000000 0x48000 004B184784B04FF0");
+	//offset = send_command("go memory search $_ F0");
+	//send_command(go mw)
+
+	debug("Jumping back into new iBEC\n");
+	error = irecv_send_command(client, "go jump $loadaddr");
+	if(error != IRECV_E_SUCCESS) {
+		pois0n_set_error("Unable to hook jump_to\n");
+		return -1;
+	}
+
+	debug("Reconnecting to device\n");
+	client = irecv_reconnect(client, 10);
+	if (client == NULL) {
+		error("Unable to reconnect\n");
+		return -1;
+	}
+
+	debug("Preparing to upload old iBEC payload\n");
+	upload_ibec_payload();
+	send_command("go");
+
+	//4.3 bug - it seems if the devicetree is not loaded the one from nand is used and this causes bad things to happen...
+	//semaphore: Added for 4.3 ramdisk booting - devicetree seems to be needed for the ramdisk to run on 4.3
+	debug("Preparing to upload devicetree\n");
+	if (upload_new_devicetree() < 0) {
+		error("Unable to upload devicetree\n");
+		return -1;
+	}
+
+	debug("Loading devicetree\n");
+	error = irecv_send_command(client, "devicetree");
+	if(error != IRECV_E_SUCCESS) {
+		pois0n_set_error("Unable to load devicetree\n");
+		return -1;
+	}
+	//End 4.3 bug
 
 	debug("Preparing to upload ramdisk\n");
 	if (upload_ramdisk() < 0) {
@@ -620,12 +919,12 @@ int boot_ramdisk() {
 		return -1;
 	}
 
-	debug("Resizing ramdisk\n");
-	error = irecv_send_command(client, "setenv filesize 0x1000000");
-	if (error != IRECV_E_SUCCESS) {
-		pois0n_set_error("Unable to execute ramdisk command\n");
-		return -1;
-	}
+	//debug("Resizing ramdisk\n");
+	//error = irecv_send_command(client, "setenv filesize 0x1000000");
+	//if (error != IRECV_E_SUCCESS) {
+	//	pois0n_set_error("Unable to execute ramdisk command\n");
+	//	return -1;
+	//}
 
 	debug("Executing ramdisk\n");
 	error = irecv_send_command(client, "ramdisk");
@@ -636,7 +935,7 @@ int boot_ramdisk() {
 
 	debug("Setting kernel bootargs\n");
 	#ifdef DEBUG_SERIAL
-	error = irecv_send_command(client, "go kernel bootargs rd=md0 -v serial=1 debug=0xa amfi_allow_any_signature=1");
+	error = irecv_send_command(client, "go kernel bootargs rd=disk0s1s1 -v serial=1 debug=0xa");
 	#endif
 
 	#ifndef DEBUG_SERIAL
@@ -648,35 +947,19 @@ int boot_ramdisk() {
 		return -1;
 	}
 
-//4.3 bug - it seems if the devicetree is not loaded the one from nand is used and this causes bad things to happen...
-//semaphore: Added for 4.3 ramdisk booting - devicetree seems to be needed for the ramdisk to run on 4.3
-    debug("Preparing to upload devicetree\n");
-    if (upload_devicetree() < 0) {
-        error("Unable to upload devicetree\n");
-        return -1;
-    }
-
-    debug("Loading devicetree\n");
-    error = irecv_send_command(client, "go devicetree");
-    if(error != IRECV_E_SUCCESS) {
-        pois0n_set_error("Unable to load devicetree\n");
-        return -1;
-    }
-//End 4.3 bug
-
 	debug("Preparing to upload kernelcache\n");
-	if (upload_kernelcache() < 0) {
+	if (upload_new_kernelcache() < 0) {
 		error("Unable to upload kernelcache\n");
 		return -1;
 	}
-
+/*
     debug("Appending kernelcache to ramdisk\n");
     error = irecv_send_command(client, "go memory copy 0x41000000 0x44800000 0x1000000");
     if(error != IRECV_E_SUCCESS) {
         pois0n_set_error("Unable to append kernelcache\n");
         return -1;
     }
-
+*/
 	debug("Hooking jump_to command\n");
 	error = irecv_send_command(client, "go rdboot");
 	if(error != IRECV_E_SUCCESS) {
@@ -726,7 +1009,7 @@ int boot_tethered() {
 //4.3 bug - it seems if the devicetree is not loaded the one from nand is used and this causes bad things to happen...
 //semaphore: Added for 4.3 ramdisk booting - devicetree seems to be needed for the ramdisk to run on 4.3
     debug("Preparing to upload devicetree\n");
-    if (upload_devicetree() < 0) {
+    if (upload_new_devicetree() < 0) {
         error("Unable to upload devicetree\n");
         return -1;
     }
@@ -740,7 +1023,7 @@ int boot_tethered() {
 //End 4.3 bug
 
 	debug("Preparing to upload kernelcache\n");
-	if (upload_kernelcache() < 0) {
+	if (upload_new_kernelcache() < 0) {
 		error("Unable to upload kernelcache\n");
 		return -1;
 	}
@@ -1068,7 +1351,7 @@ int pois0n_is_compatible_using_url(char *url) {
 
 	if (url != NULL)
 	{
-		device->url = url;
+		device->url_new = url;
 	}
 	
 	
@@ -1216,7 +1499,7 @@ int reinject_take_deux()
 {
 	irecv_error_t error = IRECV_E_SUCCESS;
 	debug("Preparing to upload iBEC\n");
-	if (upload_ibec() < 0) {
+	if (upload_new_ibec() < 0) {
 			// This sometimes returns failure even if we were successful... oh well...
 			//error("Unable to upload iBSS\n");
 			//return -1;
@@ -1272,7 +1555,7 @@ int reinject() //TODO: FIXME!! this doesn't work! :(
 {
 	irecv_error_t error = IRECV_E_SUCCESS;
 	debug("Preparing to upload iBSS\n");
-	if (upload_ibss() < 0) {
+	if (upload_old_ibss() < 0) {
 			// This sometimes returns failure even if we were successful... oh well...
 			//error("Unable to upload iBSS\n");
 			//return -1;
@@ -1334,7 +1617,7 @@ int pois0n_inject(char *bootargs) {
 	//////////////////////////////////////
 	// Send iBSS
 	debug("Preparing to upload iBSS\n");
-	if (upload_ibss() < 0) {
+	if (upload_old_ibss() < 0) {
 		// This sometimes returns failure even if we were successful... oh well...
 		//error("Unable to upload iBSS\n");
 		//return -1;

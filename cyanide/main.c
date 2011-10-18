@@ -39,6 +39,7 @@ Bool gGpHasInit = FALSE;
 int gp_init() {
 	if(common_init()) return -1;
 	if(cmd_init()) return -1;
+	if(nvram_init()) return -1;
 	if(fb_init()) return -1;
 	if(uart_init()) return -1;
 	if(radio_init()) return -1;
@@ -48,7 +49,6 @@ int gp_init() {
 	if(aes_init()) return -1;
 	if(bdev_init()) return -1;
 	if(image_init()) return -1;
-	if(nvram_init()) return -1;
 	if(fs_init()) return -1;
 	if(kernel_init()) return -1;
 

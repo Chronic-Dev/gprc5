@@ -32,6 +32,7 @@ typedef struct Font {
 } Font;
 
 extern Bool gFbHasInit;
+extern unsigned char* gFramebuffer;
 
 int fb_init();
 int fb_cmd(int argc, CmdArg* argv);

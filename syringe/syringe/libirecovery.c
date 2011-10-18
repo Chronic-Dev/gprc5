@@ -450,7 +450,7 @@ irecv_error_t irecv_open_with_ECID(uint64_t ecid, irecv_client_t* pclient) {
 
 
 irecv_error_t irecv_open(irecv_client_t* pclient) {
-#ifndef _WIN32
+#ifndef WIN32
 	int i = 0;
 	struct libusb_device* usb_device = NULL;
 	struct libusb_device** usb_device_list = NULL;
@@ -498,21 +498,106 @@ irecv_error_t irecv_open(irecv_client_t* pclient) {
 				client->handle = usb_handle;
 				client->mode = usb_descriptor.idProduct;
 				
+
+				error = irecv_set_configuration(client, 1);
+				if (error != IRECV_E_SUCCESS) {
+					return error;
+				}
+
+				if (client->mode != kDfuMode) {
+					error = irecv_set_interface(client, 0, 0);
+					error = irecv_set_interface(client, 1, 1);
+				} else {
+					error = irecv_set_interface(client, 0, 0);
+				}
+
+				if (error != IRECV_E_SUCCESS) {
+					return error;
+				}
+
+				/* cache usb serial */
+				irecv_get_string_descriptor_ascii(client, usb_descriptor.iSerialNumber, (unsigned char*) client->serial, 255);
+				
+				*pclient = client;
+				return IRECV_E_SUCCESS;
+			}
+		}
+	}
+
+	return IRECV_E_UNABLE_TO_CONNECT;
+#else
+	int ret = mobiledevice_connect(pclient);
+	if (ret == IRECV_E_SUCCESS) {
+		irecv_get_string_descriptor_ascii(*pclient, 3, (unsigned char*) (*pclient)->serial, 255);
+	}
+	return ret;
+#endif
+}
+
+irecv_error_t irecv_open_with_interface(irecv_client_t* pclient, int interface, int alt) {
+#ifndef _WIN32
+	int i = 0;
+	struct libusb_device* usb_device = NULL;
+	struct libusb_device** usb_device_list = NULL;
+	struct libusb_device_handle* usb_handle = NULL;
+	struct libusb_device_descriptor usb_descriptor;
+
+	*pclient = NULL;
+	if(libirecovery_debug) {
+		irecv_set_debug_level(libirecovery_debug);
+	}
+
+	irecv_error_t error = IRECV_E_SUCCESS;
+	int usb_device_count = libusb_get_device_list(libirecovery_context, &usb_device_list);
+	for (i = 0; i < usb_device_count; i++) {
+		usb_device = usb_device_list[i];
+		libusb_get_device_descriptor(usb_device, &usb_descriptor);
+		if (usb_descriptor.idVendor == APPLE_VENDOR_ID) {
+			/* verify this device is in a mode we understand */
+			if (usb_descriptor.idProduct == kRecoveryMode1 ||
+				usb_descriptor.idProduct == kRecoveryMode2 ||
+				usb_descriptor.idProduct == kRecoveryMode3 ||
+				usb_descriptor.idProduct == kRecoveryMode4 ||
+				usb_descriptor.idProduct == kDfuMode) {
+
+				debug("opening device %04x:%04x...\n", usb_descriptor.idVendor, usb_descriptor.idProduct);
+
+				libusb_open(usb_device, &usb_handle);
+				if (usb_handle == NULL) {
+					libusb_free_device_list(usb_device_list, 1);
+					libusb_close(usb_handle);
+					libusb_exit(libirecovery_context);
+					return IRECV_E_UNABLE_TO_CONNECT;
+				}
+				libusb_free_device_list(usb_device_list, 1);
+
+				irecv_client_t client = (irecv_client_t) malloc(sizeof(struct irecv_client));
+				if (client == NULL) {
+					libusb_close(usb_handle);
+					libusb_exit(libirecovery_context);
+					return IRECV_E_OUT_OF_MEMORY;
+				}
+
+				memset(client, '\0', sizeof(struct irecv_client));
+				client->iface = 0;
+				client->handle = usb_handle;
+				client->mode = usb_descriptor.idProduct;
+
 				if (client->mode != kDfuMode) {
 					error = irecv_set_configuration(client, 1);
 					if (error != IRECV_E_SUCCESS) {
 						return error;
 					}
-					
-					error = irecv_set_interface(client, 0, 0);
+
+					error = irecv_set_interface(client, interface, alt);
 					if (error != IRECV_E_SUCCESS) {
 						return error;
 					}
 				}
-				
+
 				/* cache usb serial */
 				irecv_get_string_descriptor_ascii(client, usb_descriptor.iSerialNumber, (unsigned char*) client->serial, 255);
-				
+
 				*pclient = client;
 				return IRECV_E_SUCCESS;
 			}
@@ -549,23 +634,24 @@ irecv_error_t irecv_set_configuration(irecv_client_t client, int configuration) 
 	return IRECV_E_SUCCESS;
 }
 
-irecv_error_t irecv_set_interface(irecv_client_t client, int iface, int alt_iface) {
+irecv_error_t irecv_set_interface(irecv_client_t client, int interface, int alt_interface) {
 	if (check_context(client) != IRECV_E_SUCCESS) return IRECV_E_NO_DEVICE;
 	
-#ifndef _WIN32
-	libusb_release_interface(client->handle, client->iface);
+#ifndef WIN32
+	// pod2g 2011-01-07: we may want to claim multiple interfaces
+	//libusb_release_interface(client->handle, client->interface);
 
-	debug("Setting to interface %d:%d\n", iface, alt_iface);
-	if (libusb_claim_interface(client->handle, iface) < 0) {
+	debug("Setting to interface %d:%d\n", interface, alt_interface);
+	if (libusb_claim_interface(client->handle, interface) < 0) {
 		return IRECV_E_USB_INTERFACE;
 	}
 
-	if (libusb_set_interface_alt_setting(client->handle, iface, alt_iface) < 0) {
+	if (libusb_set_interface_alt_setting(client->handle, interface, alt_interface) < 0) {
 		return IRECV_E_USB_INTERFACE;
 	}
 
-	client->iface = iface;
-	client->alt_iface = alt_iface;
+	client->iface = interface;
+	client->alt_iface = alt_interface;
 #endif
 
 	return IRECV_E_SUCCESS;
@@ -589,6 +675,10 @@ irecv_error_t irecv_open_attempts(irecv_client_t* pclient, int attempts) {
 	int i;
 
 	for (i = 0; i < attempts; i++) {
+		if(*pclient) {
+			irecv_close(*pclient);
+			*pclient = NULL;
+		}
 		if (irecv_open(pclient) != IRECV_E_SUCCESS) {
 			debug("Connection failed. Waiting 1 sec before retry.\n");
 			sleep(1);

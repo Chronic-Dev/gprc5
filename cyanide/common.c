@@ -110,26 +110,100 @@ int common_init() {
 	gVersionBuf[10] = '\0';
 
 	gVersion = strtoul(&gVersionBuf[6], NULL, 0);
-	if(strstr(gDeviceString, "n90ap")) {
+	// Setup global device and firmware variables here
+	// Still need to add the framebuffer address here, or just look it up later on
+	// We could also look up loadaddr later on maybe
+	// m68ap = iPhone2g
+	if(strstr(gDeviceString, "m68ap")) {
+		gLoadaddr = 0xDEADBEEF; // Fix Me!!
+		gRomBaseaddr = 0xDEADBEEF; // Fix Me!!
+		gBssBaseaddr = 0xDEADBEEF; // Fix Me!!
+		gBootBaseaddr = 0xDEADBEEF; // Fix Me!!
+
+	// n88ap = iPhone3gs
+	} else if(strstr(gDeviceString, "n88ap")) {
+		if(gVersion >= 1219) {
+			gLoadaddr = 0x40000000;
+		} else {
+			gLoadaddr = 0x41000000;
+		}
+		gRomBaseaddr = 0xBF000000;
+		gBssBaseaddr = 0x84000000;
+		gBootBaseaddr = 0x4FF00000;
+
+	// n90ap, n92ap = iPhone4
+	} else if(strstr(gDeviceString, "n90ap")
+		 || strstr(gDeviceString, "n92ap")) {
+		gRomBaseaddr = 0xBF000000;
+		gBssBaseaddr = 0x84000000;
+		gBootBaseaddr = 0x5FF00000;
+
 		if(gVersion >= 1219) {
 			gLoadaddr = 0x40000000;
 		} else {
 			gLoadaddr = 0x41000000;
 		}
 
-		gRomBaseaddr = (void*) 0xBF000000;
-		gBssBaseaddr = (void*) 0x84000000;
-		gBootBaseaddr = (void*) 0x5FF00000;
-		if(strstr(gDeviceString, "iBSS")) {
-			gBaseaddr = gBssBaseaddr;
-		} else
-		if(strstr(gDeviceString, "iBEC")) {
-			gBaseaddr = gBootBaseaddr;
-		} else
-		if(strstr(gDeviceString, "iBoot")) {
-			gBaseaddr = gBootBaseaddr;
+	// n81ap = iPod4g
+		//gLoadaddr = 0x41000000;
+		//gRomBaseaddr = 0xBF000000;
+		//gBssBaseaddr = 0x84000000;
+		//gBootBaseaddr = 0x5FF00000;
 
-		}
+	// n18ap = iPod3g
+	} else if(strstr(gDeviceString, "n18ap")) {
+		gLoadaddr = 0x41000000;
+		gRomBaseaddr = 0xBF000000;
+		gBssBaseaddr = 0x84000000;
+		gBootBaseaddr = 0x4FF00000;
+
+	// n72ap = iPod2g
+	} else if(strstr(gDeviceString, "n72ap")) {
+		gLoadaddr = 0x09000000;
+		gRomBaseaddr = 0xDEADBEEF; // Fix Me!!
+		gBssBaseaddr = 0xDEADBEEF; // Fix Me!!
+		gBootBaseaddr = 0xFF000000; // Check Me!!
+
+	// k48ap = iPad1
+	} else if(strstr(gDeviceString, "k48ap")) {
+		gLoadaddr = 0x41000000;
+		gRomBaseaddr = 0xBF000000;
+		gBssBaseaddr = 0x84000000;
+		gBootBaseaddr = 0x5FF00000;
+
+	// k93ap, k94ap, k95ap = iPad2
+	} else if(strstr(gDeviceString, "k93ap") ||
+				strstr(gDeviceString, "k94ap") ||
+				strstr(gDeviceString, "k95ap")) {
+		gLoadaddr = 0xDEADBEEF; // Fix Me!!
+		gRomBaseaddr = 0xDEADBEEF; // Fix Me!!
+		gBssBaseaddr = 0xDEADBEEF; // Fix Me!!
+		gBootBaseaddr = 0xDEADBEEF; // Fix Me!!
+
+	// k66ap = AppleTV
+	} else if(strstr(gDeviceString, "k66ap")) {
+		gLoadaddr = 0x41000000;
+		gRomBaseaddr = 0xBF000000;
+		gBssBaseaddr = 0x84000000;
+		gBootBaseaddr = 0x5FF00000;
+
+	} else {
+		gLoadaddr = NULL;
+		gRomBaseaddr = NULL;
+		gBssBaseaddr = NULL;
+		gBootBaseaddr = NULL;
+	}
+
+	if(strstr(gDeviceString, "iBSS")) {
+		gBaseaddr = gBssBaseaddr;
+	} else
+
+	if(strstr(gDeviceString, "iBEC")) {
+		gBaseaddr = gBootBaseaddr;
+	} else
+
+	if(strstr(gDeviceString, "iBoot")) {
+		gBaseaddr = gBootBaseaddr;
 	}
 
 	_serial_write = find_function("uart_write", gBaseaddr, gBaseaddr);

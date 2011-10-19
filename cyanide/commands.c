@@ -454,6 +454,7 @@ void hooked(int flags, void* addr, int phymem) {
 	//hexdump(addr, 0x200);
 	//hexdump(phymem, 0x200);
 	hexdump(0x44000000, 0x200);
+	hexdump(0x40000000, 0x80000);
 	printf("Patching kernel\n");
 	//patch_kernel((void*)(gLoadaddr - 0x1000000), 0xF00000);
 	//patch_kernel(addr, 0xA00000);

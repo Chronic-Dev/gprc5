@@ -21,7 +21,6 @@
 
 #include "font.h"
 #include "nvram.h"
-#include "device.h"
 #include "common.h"
 #include "commands.h"
 #include "framebuffer.h"

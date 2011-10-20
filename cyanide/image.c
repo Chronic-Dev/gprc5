@@ -25,7 +25,6 @@
 #include "task.h"
 #include "image.h"
 #include "common.h"
-#include "device.h"
 
 LinkedList* gImageList = NULL;
 

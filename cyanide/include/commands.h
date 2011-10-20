@@ -20,9 +20,6 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
-#include "device.h"
-#include "offsets.h"
-
 #define MAX_COMMANDS 40
 
 #define CMDARG_TYPE_STRING 0

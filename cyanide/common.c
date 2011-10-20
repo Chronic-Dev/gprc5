@@ -127,6 +127,7 @@ int common_init() {
 		} else {
 			gLoadaddr = 0x41000000;
 		}
+
 		gRomBaseaddr = 0xBF000000;
 		gBssBaseaddr = 0x84000000;
 		gBootBaseaddr = 0x4FF00000;
@@ -166,7 +167,11 @@ int common_init() {
 
 	// k48ap = iPad1
 	} else if(strstr(gDeviceString, "k48ap")) {
-		gLoadaddr = 0x41000000;
+		if(gVersion >= 1219) {
+			gLoadaddr = 0x40000000;
+		} else {
+			gLoadaddr = 0x41000000;
+		}
 		gRomBaseaddr = 0xBF000000;
 		gBssBaseaddr = 0x84000000;
 		gBootBaseaddr = 0x5FF00000;

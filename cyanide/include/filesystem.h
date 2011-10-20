@@ -21,8 +21,6 @@
 #define FILESYSTEM_H
 
 #include "common.h"
-#include "device.h"
-#include "offsets.h"
 #include "commands.h"
 
 #ifdef TARGET_FS_UNMOUNT

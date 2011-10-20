@@ -20,9 +20,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "device.h"
-#include "offsets.h"
-
 #ifndef NULL
 #define NULL 0
 #endif

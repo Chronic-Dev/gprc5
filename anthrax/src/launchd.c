@@ -108,12 +108,12 @@ int install_files(int device) {
 	puts("Installing AFC2... ");
 	parse_module_response(afc2_install());
 
-	if(!strcmp("iPhone", info.model)) {
+	//if(!strcmp("iPhone", info.model)) {
 	    //puts("Installing hacktivation... \n");
 	    //parse_module_response(hacktivation_install());
-	}
+	//}
 
-	if(device != DEVICE_ATV) {
+	//if(device != DEVICE_ATV) {
 	    puts("Installing Loader... ");
 	    parse_module_response(loader_install());
 
@@ -125,13 +125,13 @@ int install_files(int device) {
 	    puts("Refreshing icon cache... ");
 	    parse_module_response(sachet_install());
 
-	} else if (device == DEVICE_ATV){
-		parse_module_response(larry_install());
+	//} else if (device == DEVICE_ATV){
+		//parse_module_response(larry_install());
 	
-		
-	}
-	
-	
+
+	//}
+
+
 		//temporary Services.plist install for afc2, make sure to comment out!!
 	
 	//unlink("/mnt/System/Library/Lockdown/Services.plist");
@@ -148,27 +148,27 @@ int install_files(int device) {
 	//}
 	//
 		// i0n1c's 4.3.x Untethered Exploit
-	if(!strcmp(FW_BUILD_433, info.version) || !strcmp(info.version, FW_IPAD1_433)
-	   || !strcmp(FW_APPLETV_432, info.version) || !strcmp(FW_APPLETV_431, info.version) 
-	   || !strcmp(FW_BUILD_431, info.version) || !strcmp(FW_ALL_432, info.version)) {
+	//if(!strcmp(FW_BUILD_433, info.version) || !strcmp(info.version, FW_IPAD1_433)
+	 //  || !strcmp(FW_APPLETV_432, info.version) || !strcmp(FW_APPLETV_431, info.version)
+	 //  || !strcmp(FW_BUILD_431, info.version) || !strcmp(FW_ALL_432, info.version)) {
 		
-		puts("Installing untethered exploit for info.version: ");
-		puts(info.version);
-		puts("\n");
-		puts("\n");
-		parse_module_response(crunchd_install());
+	//	puts("Installing untethered exploit for info.version: ");
+	//	puts(info.version);
+	//	puts("\n");
+	//	puts("\n");
+	//	parse_module_response(crunchd_install());
 	
-	}
+	//}
 	
 		//vzw 4.2.8 untether
 	
 
-		if(!strcmp(FW_IPHONE4_VZW_428, info.version) || !strcmp(FW_APPLETV_421, info.version)
-		   || !strcmp(FW_IPHONE4_VZW_427, info.version) || !strcmp(FW_IPHONE4_VZW_426, info.version)) {
+		//if(!strcmp(FW_IPHONE4_VZW_428, info.version) || !strcmp(FW_APPLETV_421, info.version)
+		 //  || !strcmp(FW_IPHONE4_VZW_427, info.version) || !strcmp(FW_IPHONE4_VZW_426, info.version)) {
 	
-			puts("Installing untethered exploit...\n");
-			parse_module_response(feedface_install());
-		}
+		//	puts("Installing untethered exploit...\n");
+		//	parse_module_response(feedface_install());
+		//ê}
 	
 		//	puts("Installing untethered exploit...\n");
 		//	parse_module_response(feedface_install());

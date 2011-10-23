@@ -412,14 +412,14 @@ int cmd_rdboot(int argc, CmdArg* argv) {
 	printf("Found jump_to function at %p\n", jump_to);
 
 	memcpy(orig_hooked, jump_to, 8);
-	hexdump(orig_hooked, 8);
+	//hexdump(orig_hooked, 8);
 	memcpy(jump_to, "\x00\x4b\x98\x47", 4);
 	memcpy(jump_to+4, &hooker, 4);
 
 	printf("Hooked jump_to function to call 0x%08x\n", hooker);
 
 	//call address
-	printf("Calling bootx\n");
+	//printf("Calling bootx\n");
 
 	return 0;
 }
@@ -447,32 +447,55 @@ void clear_icache() {
     __asm__("nop");
 };
 
+struct boot_args {
+    unsigned short something; // 0 - 1
+    unsigned short epoch; // 2 - must be 2 (6 on iPhone1,2 etc...?)
+    unsigned int virtbase; // 4
+    unsigned int physbase; // 8
+    unsigned int size; // c
+    unsigned int pt_paddr; // 10: | 0x18 (eh, but we're 0x4000 off) -> ttbr1
+    unsigned int v_baseAddr; // 14 (-> PE_state+4 - v_baseAddr) 5f700000
+    unsigned int v_display; // 18 (-> PE_state+0x18 - v_display) 1
+    unsigned int v_rowBytes;  // 1c (-> PE_state+8 - v_rowBytes) 2560
+    unsigned int v_width; // 20 (-> PE_state+0xc - v_width) 640
+    unsigned int v_height; // 24 (-> PE_state+0x10 - v_height) 960
+    unsigned int v_depth; // 28 (-> PE_state+0x14 - v_depth) 65568?
+    unsigned int unk2c; // 2c
+    char     *dt_vaddr; // 30 (-> PE_state+0x6c)
+    unsigned int dt_size; // 34
+    char     cmdline[]; // 38
+} __attribute__((packed));
+
 void hooked(int flags, void* addr, int phymem) {
 	// patch kernel
+	struct boot_args* args = phymem;
 	printf("Entered hooked jump_to function!!!\n");
 	printf("flags = %d, addr = %p, phymem = 0x%08x\n", flags, addr, phymem);
 	//hexdump(addr, 0x200);
 	//hexdump(phymem, 0x200);
-	hexdump(0x44000000, 0x200);
-	hexdump(0x40000000, 0x80000);
+	//hexdump(0x44000000, 0x200);
+	//hexdump(0x40000000, 0x80000);
 	printf("Patching kernel\n");
 	//patch_kernel((void*)(gLoadaddr - 0x1000000), 0xF00000);
 	//patch_kernel(addr, 0xA00000);
-	patch_kernel((void*)0x44000000, 0xA00000);
-	void(*kern)(void*, int, int, int) = (void*) addr;
-	printf("Jumping into kernel NOW!!!!\n");
-	kern(phymem, 0, 0, 0);
+	patch_kernel((void*)0x40001000, 0xA00000);
+	//void(*kern)(void*, int, int, int) = (void*) addr;
+	//printf("Jumping into kernel NOW!!!!\n");
+	//kern(phymem, 0, 0, 0);
 
+	printf("Boot-Args = %s\n", args->cmdline);
+	strcpy(args->cmdline, "rd=md0 -v serial=1");
+	printf("Boot-Args = %s\n", args->cmdline);
 	printf("Replace hooking code with original\n");
-	if(strstr((char*) (gBaseaddr + 0x200), "n72ap")) {
-		memcpy(jump_to, "\xf0\xb5\x03\xaf\x04\x1c\x15\x1c", 8);
-	} else {
-		memcpy(jump_to, "\x80\xb5\x00\xaf\x04\x46\x15\x46", 8);
-	}
+	//if(strstr((char*) (gBaseaddr + 0x200), "n72ap")) {
+	//	memcpy(jump_to, "\xf0\xb5\x03\xaf\x04\x1c\x15\x1c", 8);
+	//} else {
+	//	memcpy(jump_to, "\x80\xb5\x00\xaf\x04\x46\x15\x46", 8);
+	//}
 	memcpy(jump_to, orig_hooked, 8);
 	clear_icache();
 
 	jump_to++;
 	printf("Calling %p\n", jump_to);
-	//jump_to(flags, addr, phymem);
+	jump_to(flags, addr, phymem);
 }

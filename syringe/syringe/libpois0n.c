@@ -707,6 +707,33 @@ int boot_ramdisk() {
 	upload_ibec_payload();
 	send_command("go");
 
+	debug("Preparing to upload ramdisk\n");
+	if (upload_ramdisk() < 0) {
+		error("Unable to upload ramdisk\n");
+		return -1;
+	}
+
+	debug("Executing ramdisk\n");
+	error = irecv_send_command(client, "ramdisk");
+	if (error != IRECV_E_SUCCESS) {
+		pois0n_set_error("Unable to execute ramdisk command\n");
+		return -1;
+	}
+
+	debug("Setting kernel bootargs\n");
+	#ifdef DEBUG_SERIAL
+	error = irecv_send_command(client, "go kernel bootargs rd=md0 -v serial=1 debug=0xa");
+	#endif
+
+	#ifndef DEBUG_SERIAL
+	error = irecv_send_command(client, "go kernel bootargs rd=md0 -v amfi_allow_any_signature=1");
+	#endif
+
+	if (error != IRECV_E_SUCCESS) {
+		pois0n_set_error("Unable to set kernel bootargs\n");
+		return -1;
+	}
+
 	//4.3 bug - it seems if the devicetree is not loaded the one from nand is used and this causes bad things to happen...
 	//semaphore: Added for 4.3 ramdisk booting - devicetree seems to be needed for the ramdisk to run on 4.3
 	debug("Preparing to upload devicetree\n");
@@ -723,57 +750,15 @@ int boot_ramdisk() {
 	}
 	//End 4.3 bug
 
-	debug("Preparing to upload ramdisk\n");
-	if (upload_ramdisk() < 0) {
-		error("Unable to upload ramdisk\n");
-		return -1;
-	}
-
-	//debug("Resizing ramdisk\n");
-	//error = irecv_send_command(client, "setenv filesize 0x1000000");
-	//if (error != IRECV_E_SUCCESS) {
-	//	pois0n_set_error("Unable to execute ramdisk command\n");
-	//	return -1;
-	//}
-
-	debug("Executing ramdisk\n");
-	error = irecv_send_command(client, "ramdisk");
-	if (error != IRECV_E_SUCCESS) {
-		pois0n_set_error("Unable to execute ramdisk command\n");
-		return -1;
-	}
-
-	debug("Setting kernel bootargs\n");
-	#ifdef DEBUG_SERIAL
-	error = irecv_send_command(client, "go kernel bootargs rd=disk0s1s1 -v serial=1 debug=0xa");
-	#endif
-
-	#ifndef DEBUG_SERIAL
-	error = irecv_send_command(client, "go kernel bootargs rd=md0 -v amfi_allow_any_signature=1");
-	#endif
-
-	if (error != IRECV_E_SUCCESS) {
-		pois0n_set_error("Unable to set kernel bootargs\n");
-		return -1;
-	}
-
 	debug("Preparing to upload kernelcache\n");
 	if (upload_new_kernelcache() < 0) {
 		error("Unable to upload kernelcache\n");
 		return -1;
 	}
-/*
-    debug("Appending kernelcache to ramdisk\n");
-    error = irecv_send_command(client, "go memory copy 0x41000000 0x44800000 0x1000000");
-    if(error != IRECV_E_SUCCESS) {
-        pois0n_set_error("Unable to append kernelcache\n");
-        return -1;
-    }
-*/
-	debug("Hooking jump_to command\n");
+
 	error = irecv_send_command(client, "go rdboot");
-	if(error != IRECV_E_SUCCESS) {
-		pois0n_set_error("Unable to hook jump_to\n");
+	if (error != IRECV_E_SUCCESS) {
+		pois0n_set_error("Unable to boot kernelcache\n");
 		return -1;
 	}
 

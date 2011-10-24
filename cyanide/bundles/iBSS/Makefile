@@ -9,7 +9,7 @@ MODEL = n90ap
 OBJCOPY = $(CROSS)objcopy
 OBJECTS = entry.o main.o common.o commands.o task.o lock.o aes.o bdev.o image.o nvram.o filesystem.o kernel.o memory.o patcher.o functions.o framebuffer.o breakpoint.o uart.o radio.o
 CFLAGS = -I. -I./.. -I./../.. -I./$(SRC)/include -nostdlib -mlittle-endian
-LDFLAGS = -Ttext=$(LOADADDR) -nostdlib -lc -lm -lgcc
+LDFLAGS = -Ttext $(LOADADDR) -nostdlib -lc -lm -lgcc
 
 %.o: $(SRC)/%.S
 	$(CC) -c $(<) -o $(@) $(INCLUDES) $(CFLAGS) 

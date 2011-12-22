@@ -16,10 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
  
-SDKVER = 4.3
+SDKVER = 5.0
 PLATFORM = /Developer/Platforms/iPhoneOS.platform
 SDK = $(PLATFORM)/Developer/SDKs/iPhoneOS$(SDKVER).sdk
-CC = $(PLATFORM)/Developer/usr/bin/gcc-4.2
+CC = $(PLATFORM)/Developer/usr/bin/gcc
 STRIP = $(PLATFORM)/Developer/usr/bin/strip
 LDID = /usr/local/bin/ldid
 

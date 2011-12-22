@@ -1,4 +1,4 @@
-SYSROOT:=/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS4.3.sdk
+SYSROOT:=/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS5.0.sdk
 include ../theos/makefiles/common.mk
 
 TOOL_NAME = immutable

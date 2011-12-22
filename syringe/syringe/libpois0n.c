@@ -767,6 +767,7 @@ int boot_ramdisk() {
 		pois0n_set_error("Unable to boot kernelcache\n");
 		return -1;
 	}
+
 	return 0;
 }
 

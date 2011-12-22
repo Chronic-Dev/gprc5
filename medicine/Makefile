@@ -1,36 +1,36 @@
 all:
 	# afc2add
-	make -C afc2add
-	cp ./afc2add/obj/afc2add ../anthrax/files/
+	#make -C afc2add
+	#cp ./afc2add/obj/afc2add ../anthrax/files/
 
 	#make -C animate
 
-	make stage -C AshyLarry
+	#make stage -C AshyLarry
 	
 	# capable
-	make -C capable
-	cp ./capable/obj/capable ../anthrax/files/
+	#make -C capable
+	#cp ./capable/obj/capable ../anthrax/files/
 
-	make -C fixkeybag
-	cp ./fixkeybag/fixkeybag ../anthrax/files/
+	#make -C fixkeybag
+	#cp ./fixkeybag/fixkeybag ../anthrax/files/
 
 	#make -C hacktivate 
 
-	make -C hunnypot
-	cp ./hunnypot/obj/installer ../anthrax/files/hunnypot/
+	#make -C hunnypot
+	#cp ./hunnypot/obj/installer ../anthrax/files/hunnypot/
 
-	make -C immutable
-	cp ./immutable/obj/immutable ../anthrax/files/
+	#make -C immutable
+	#cp ./immutable/obj/immutable ../anthrax/files/
 
-	make stage -C Loader
-	cp -r Loader/_/Applications/Loader.app ../anthrax/files/
+	#make stage -C Loader
+	#cp -r Loader/_/Applications/Loader.app ../anthrax/files/
 
-	make -C sachet
-	cp ./sachet/obj/sachet ../anthrax/files/	
+	#make -C sachet
+	#cp ./sachet/obj/sachet ../anthrax/files/	
 
-	#make -C activate
+	##make -C activate
 	
-	#make -C whacktivate
+	##make -C whacktivate
 
 
 clean:

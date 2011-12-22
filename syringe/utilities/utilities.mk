@@ -2,20 +2,20 @@ UNAME := $(shell uname -s)
 INCLUDES = ../include
 SOURCES = $(TARGET).c
 
-XPLAT_CFLAGS = -O3
+XPLAT_CFLAGS = -O3 -I/usr/include -I/opt/local/include -arch i386 -mmacosx-version-min=10.7 -isysroot /Developer/SDKs/MacOSX10.7.sdk
 PLAT_CFLAGS =
 XPLAT_LIBRARIES = syringe curl z xml2
-XPLAT_LDFLAGS = -L../syringe
-PLAT_LDFLAGS =
+XPLAT_LDFLAGS = -L../syringe -L/usr/lib -L/opt/local/lib -framework CoreFoundation -framework IOKit -mmacosx-version-min=10.7 -arch i386 -isysroot /Developer/SDKs/MacOSX10.7.sdk -fnested-functions
+PLAT_LDFLAGS = 
 XPLAT_PREMADE_OBJECTS =
 PLAT_PREMADE_OBJECTS =
 
 include ../platform.mk
 ifeq ($(UNAME),Darwin)
 	# OS X
-	PLAT_CFLAGS = -mmacosx-version-min=10.6 -arch i386 -isysroot /Developer/SDKs/MacOSX10.6.sdk -framework IOKit
+	PLAT_CFLAGS = -I/opt/local/include -arch i386 -mmacosx-version-min=10.7 -isysroot /Developer/SDKs/MacOSX10.7.sdk -framework IOKit
 	PLAT_LIBRARIES =
-	PLAT_LDFLAGS = -L/opt/local/lib -framework CoreFoundation -framework IOKit -mmacosx-version-min=10.6 -arch i386 -isysroot /Developer/SDKs/MacOSX10.6.sdk -fnested-functions
+	LDFLAGS = -L/opt/local/lib -L/usr/lib -I/usr/include  -framework CoreFoundation -framework IOKit -mmacosx-version-min=10.6 -arch i386 -isysroot /Developer/SDKs/MacOSX10.6.sdk -fnested-functions
 	ADDOBJ = ../lib-static/macosx/libusb-1.0.a ../lib-static/macosx/libplist.a ../lib-static/macosx/libimobiledevice.a ../lib-static/macosx/libgnutls.a ../lib-static/macosx/libgnutlsxx.a ../lib-static/macosx/libgpg-error.a ../lib-static/macosx/libusbmuxd.a ../lib-static/macosx/libgcrypt.a
 else
 	ifneq (,$(findstring MINGW32_NT,$(UNAME)))

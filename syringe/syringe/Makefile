@@ -25,10 +25,10 @@ PLAT_PREMADE_OBJECTS =
 include ../platform.mk
 ifeq ($(UNAME),Darwin)
 	# OS X
-	PLAT_CFLAGS = -mmacosx-version-min=10.6 -arch i386 -isysroot /Developer/SDKs/MacOSX10.6.sdk -framework IOKit
+	PLAT_CFLAGS = -I/usr/include -I/opt/local/include -arch i386 -mmacosx-version-min=10.7 -isysroot /Developer/SDKs/MacOSX10.7.sdk -framework IOKit
 	PLAT_LIBRARIES =
-	LDFLAGS = -fnested-functions -L/opt/local/lib -mmacosx-version-min=10.6 -arch i386 -isysroot /Developer/SDKs/MacOSX10.6.sdk
-	ADDOBJ = ../lib-static/macosx/libusb-1.0.a ../lib-static/macosx/libplist.a ../lib-static/macosx/libimobiledevice.a ../lib-static/macosx/libgnutls.a ../lib-static/macosx/libgnutlsxx.a ../lib-static/macosx/libgpg-error.a ../lib-static/macosx/libusbmuxd.a ../lib-static/macosx/libgcrypt.a
+	LDFLAGS = -L/usr/lib -framework CoreFoundation -framework IOKit -mmacosx-version-min=10.7 -arch i386 -isysroot /Developer/SDKs/MacOSX10.7.sdk -fnested-functions
+	ADDOBJ = ../lib-static/macosx/libusb-1.0.a ../lib-static/macosx/libplist.a ../lib-static/macosx/libimobiledevice.a ../lib-static/macosx/libgnutls.a ../lib-static/macosx/libgnutlsxx.a ../lib-static/macosx/libgpg-error.a ../lib-static/macosx/libusbmuxd.a ../lib-static/macosx/libgcrypt.a ../lib-static/macosx/libcurl.a
 else
 	ifneq (,$(findstring MINGW32_NT,$(UNAME)))
 		# Win32
